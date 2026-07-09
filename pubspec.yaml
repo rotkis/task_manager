@@ -1,0 +1,43 @@
+name: task_manager
+description: App anti-procrastinação com Flutter e Isar.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Banco de dados local
+  isar_community: ^3.3.2
+  isar_community_flutter_libs: ^3.3.2
+  path_provider: ^2.1.0
+
+  # Notificações e alarmes
+  flutter_local_notifications: ^17.2.0
+  timezone: ^0.9.4
+
+  # Gráfico de evolução (linha)
+  fl_chart: ^0.68.0
+
+  # Calendário / cronograma
+  table_calendar: ^3.1.2
+
+  # Gerenciamento de estado
+  provider: ^6.1.2
+
+  # Utilitários
+  intl: ^0.19.0
+  uuid: ^4.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  isar_community_generator: ^3.3.2
+  build_runner: ^2.4.11
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true

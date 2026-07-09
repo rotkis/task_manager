@@ -1,0 +1,106 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "nvidia/deepseek-ai/deepseek-v4-pro",
+  "default_agent": "flutter-build",
+
+  "provider": {
+    "nvidia": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "https://integrate.api.nvidia.com/v1",
+        "apiKey": "{file:/home/manga/.config/opencode/secrets/nvidia.key}"
+      },
+      "models": {
+        "deepseek-ai/deepseek-v4-pro": {
+          "limit": {
+            "context": 1000000,
+            "output": 32768
+          },
+          "options": {
+            "temperature": 1,
+            "top_p": 0.95,
+            "chat_template_kwargs": {
+              "thinking": true,
+              "enable_thinking": true,
+              "reasoning_effort": "high"
+            }
+          }
+        },
+        "deepseek-ai/deepseek-v4-flash": {
+          "limit": {
+            "context": 1000000,
+            "output": 16384
+          },
+          "options": {
+            "chat_template_kwargs": {
+              "thinking": false
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "instructions": [
+    "AGENTS.md",
+    "specs/spec.md",
+    "specs/plan.md",
+    "specs/tasks.md"
+  ],
+
+  "agent": {
+    "flutter-build": {
+      "description": "Agente principal: implementa os módulos do tasks.md seguindo plan.md",
+      "mode": "primary",
+      "model": "nvidia/deepseek-ai/deepseek-v4-pro",
+      "prompt": "Você trabalha num app Flutter + Isar (isar_community). Sempre siga a arquitetura de camadas (widgets -> controller -> repository -> isar) descrita em specs/plan.md. Nunca acesse o Isar diretamente de um widget. Depois de editar qualquer arquivo, rode dart format, flutter analyze e flutter test antes de considerar a tarefa concluída, corrigindo erros em loop até passarem limpos."
+    },
+    "test-runner": {
+      "description": "Roda format, analyze e test do Flutter e reporta erros de forma resumida. Chamado depois de qualquer edição de código.",
+      "mode": "subagent",
+      "model": "nvidia/deepseek-ai/deepseek-v4-flash",
+      "tools": {
+        "write": false,
+        "edit": false
+      }
+    },
+    "reviewer": {
+      "description": "Revisa um diff ou módulo já implementado comparando com a spec, sem alterar código.",
+      "mode": "subagent",
+      "model": "nvidia/deepseek-ai/deepseek-v4-pro",
+      "tools": {
+        "write": false,
+        "edit": false
+      }
+    }
+  },
+
+  "permission": {
+    "bash": {
+      "*": "ask",
+      "flutter analyze": "allow",
+      "flutter test*": "allow",
+      "dart format*": "allow",
+      "flutter pub get": "allow",
+      "flutter pub run build_runner*": "allow",
+      "git status": "allow",
+      "git diff*": "allow",
+      "rm *": "ask"
+    }
+  },
+
+  "formatter": {
+    "custom-dart-format": {
+      "command": ["dart", "format", "$FILE"],
+      "extensions": [".dart"]
+    }
+  },
+
+  "compaction": {
+    "auto": true,
+    "prune": true
+  },
+
+  "share": "manual",
+  "autoupdate": true
+}
