@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'data/isar/isar_service.dart';
+import 'data/repositories/share_repository.dart';
 import 'features/notifications/alarm_service.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/calendar/screens/calendar_screen.dart';
+import 'features/share/controllers/share_controller.dart';
+import 'features/share/screens/share_screen.dart';
+import 'features/stats/screens/stats_screen.dart';
 import 'features/tasks/controllers/task_controller.dart';
 import 'features/tasks/screens/tasks_screen.dart';
 import 'theme/app_theme.dart';
@@ -44,11 +48,20 @@ class _TaskManagerAppState extends State<TaskManagerApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => TaskController(
-        notificationService: widget.notificationService,
-        alarmService: widget.alarmService,
-      )..init(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => TaskController(
+            notificationService: widget.notificationService,
+            alarmService: widget.alarmService,
+          )..init(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => ShareController(
+            repository: ShareRepository(),
+          ),
+        ),
+      ],
       child: MaterialApp(
         title: 'Task Manager',
         debugShowCheckedModeBanner: false,
@@ -69,7 +82,8 @@ class _TaskManagerAppState extends State<TaskManagerApp> {
   }
 }
 
-/// Casca com navegação por abas: Tarefas, Cronograma/Calendário, Evolução.
+/// Casca com navegação por abas: Tarefas, Cronograma/Calendário, Evolução,
+/// Compartilhar.
 class HomeShell extends StatefulWidget {
   final VoidCallback onToggleTheme;
   const HomeShell({super.key, required this.onToggleTheme});
@@ -81,12 +95,18 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  static const _titles = ['Tarefas', 'Cronograma', 'Evolução'];
+  static const _titles = [
+    'Tarefas',
+    'Cronograma',
+    'Evolução',
+    'Compartilhar',
+  ];
 
   static const _pages = <Widget>[
     TasksScreen(),
     CalendarScreen(),
-    Center(child: Text('Evolução — Módulo 4')),
+    StatsScreen(),
+    ShareScreen(),
   ];
 
   @override
@@ -118,6 +138,8 @@ class _HomeShellState extends State<HomeShell> {
               icon: Icon(Icons.calendar_month_outlined), label: 'Cronograma'),
           NavigationDestination(
               icon: Icon(Icons.show_chart), label: 'Evolução'),
+          NavigationDestination(
+              icon: Icon(Icons.share_outlined), label: 'Compartilhar'),
         ],
       ),
     );

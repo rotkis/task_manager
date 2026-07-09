@@ -30,8 +30,10 @@ class TaskController extends ChangeNotifier {
   TaskRepository get taskRepo => _taskRepo;
 
   StreamSubscription<List<TaskItem>>? _tasksSub;
+  StreamSubscription<List<TaskItem>>? _allTasksSub;
 
   List<TaskItem> _todayTasks = [];
+  List<TaskItem> _allTasks = [];
   TaskItem? _lastDeletedTask;
 
   TaskController({
@@ -67,7 +69,16 @@ class TaskController extends ChangeNotifier {
       _todayTasks = tasks;
       notifyListeners();
     });
+
+    _allTasksSub?.cancel();
+    _allTasksSub = _taskRepo.watchAll().listen((tasks) {
+      _allTasks = tasks;
+      notifyListeners();
+    });
   }
+
+  /// Lista completa de todas as tarefas (usada pela tela de compartilhar).
+  List<TaskItem> get allTasks => _allTasks;
 
   // ─── CRUD ──────────────────────────────────────────────────────────
 
@@ -161,6 +172,7 @@ class TaskController extends ChangeNotifier {
   @override
   void dispose() {
     _tasksSub?.cancel();
+    _allTasksSub?.cancel();
     super.dispose();
   }
 }
