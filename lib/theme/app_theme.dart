@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
 
-/// Paleta inspirada no Catppuccin Mocha para o dark theme,
-/// e um branco levemente amarelado ("cream") para o light theme.
+/// Paleta Solarized Light e Catppuccin Mocha Dark.
 class AppColors {
-  // --- Dark theme (Catppuccin-like) ---
-  static const darkBase = Color(0xFF1E1E2E); // fundo principal
-  static const darkMantle = Color(0xFF181825); // fundo secundário / cards
-  static const darkSurface = Color(0xFF313244); // superfícies elevadas
-  static const darkMauve = Color(0xFFCBA6F7); // cor de destaque (roxo)
+  // --- Dark theme (Catppuccin Mocha) ---
+  static const darkBase = Color(0xFF1E1E2E);
+  static const darkMantle = Color(0xFF181825);
+  static const darkSurface = Color(0xFF313244);
+  static const darkMauve = Color(0xFFCBA6F7);
   static const darkLavender = Color(0xFFB4BEFE);
   static const darkText = Color(0xFFCDD6F4);
   static const darkSubtext = Color(0xFFA6ADC8);
-  static const darkGreen = Color(0xFFA6E3A1); // sucesso / recompensa
-  static const darkRed = Color(0xFFF38BA8); // alerta / atraso
+  static const darkGreen = Color(0xFFA6E3A1);
+  static const darkRed = Color(0xFFF38BA8);
 
-  // --- Light theme (branco amarelado) ---
-  static const lightBase = Color(0xFFFFF8E7); // fundo creme
-  static const lightSurface = Color(0xFFFFF1CE); // cards
-  static const lightPrimary = Color(0xFF8C6D4F); // marrom suave / destaque
-  static const lightAccent =
-      Color(0xFF9C7CC4); // toque roxo combinando com o dark
-  static const lightText = Color(0xFF3D3428);
-  static const lightSubtext = Color(0xFF7A6E5C);
-  static const lightGreen = Color(0xFF5C9E62);
-  static const lightRed = Color(0xFFC2564D);
+  // --- Light theme (Solarized Light) ---
+  static const lightBase = Color(0xFFFDF6E3); // fundo
+  static const lightSurface = Color(0xFFEEE8D5); // cards / superfícies
+  static const lightPrimary = Color(0xFF268BD2); // destaque azul
+  static const lightSecondary = Color(0xFFB58900); // dourado
+  static const lightText = Color(0xFF657B83); // corpo
+  static const lightTitle = Color(0xFF586E75); // títulos
+  static const lightGreen = Color(0xFF859900); // sucesso
+  static const lightRed = Color(0xFFDC322F); // alerta
+  static const lightOrange = Color(0xFFCB4B16); // warning
 }
 
 class AppTheme {
@@ -31,9 +30,17 @@ class AppTheme {
     final colorScheme = ColorScheme.light(
       surface: AppColors.lightBase,
       primary: AppColors.lightPrimary,
-      secondary: AppColors.lightAccent,
+      secondary: AppColors.lightSecondary,
       error: AppColors.lightRed,
       onSurface: AppColors.lightText,
+      onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onError: Colors.white,
+    );
+
+    final textTheme = _textTheme(
+      AppColors.lightText,
+      AppColors.lightTitle,
     );
 
     return ThemeData(
@@ -42,15 +49,23 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.lightBase,
       cardColor: AppColors.lightSurface,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.lightBase,
-        foregroundColor: AppColors.lightText,
+        foregroundColor: AppColors.lightTitle,
         elevation: 0,
       ),
-      textTheme: _textTheme(AppColors.lightText, AppColors.lightSubtext),
+      textTheme: textTheme,
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.lightAccent,
+        backgroundColor: AppColors.lightPrimary,
         foregroundColor: Colors.white,
+      ),
+      dividerTheme: DividerThemeData(
+        color: AppColors.lightSurface,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
       ),
     );
   }
@@ -75,7 +90,7 @@ class AppTheme {
         foregroundColor: AppColors.darkText,
         elevation: 0,
       ),
-      textTheme: _textTheme(AppColors.darkText, AppColors.darkSubtext),
+      textTheme: _textTheme(AppColors.darkText, AppColors.darkText),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.darkMauve,
         foregroundColor: AppColors.darkBase,
@@ -83,14 +98,31 @@ class AppTheme {
     );
   }
 
-  static TextTheme _textTheme(Color text, Color subtext) {
+  static TextTheme _textTheme(Color body, Color titles) {
     return TextTheme(
-      titleLarge:
-          TextStyle(color: text, fontWeight: FontWeight.bold, fontSize: 22),
-      titleMedium:
-          TextStyle(color: text, fontWeight: FontWeight.w600, fontSize: 18),
-      bodyLarge: TextStyle(color: text, fontSize: 16),
-      bodyMedium: TextStyle(color: subtext, fontSize: 14),
+      titleLarge: TextStyle(
+        color: titles,
+        fontWeight: FontWeight.bold,
+        fontSize: 22,
+      ),
+      titleMedium: TextStyle(
+        color: titles,
+        fontWeight: FontWeight.w600,
+        fontSize: 18,
+      ),
+      titleSmall: TextStyle(
+        color: titles,
+        fontWeight: FontWeight.w600,
+        fontSize: 14,
+      ),
+      bodyLarge: TextStyle(color: body, fontSize: 16),
+      bodyMedium: TextStyle(color: body, fontSize: 14),
+      bodySmall: TextStyle(color: body, fontSize: 12),
+      labelSmall: TextStyle(color: body, fontSize: 11),
     );
   }
+
+  /// Helper para usar em cards que precisam de cor de título distinta.
+  static Color get lightTitleColor => AppColors.lightTitle;
+  static Color get lightBodyColor => AppColors.lightText;
 }

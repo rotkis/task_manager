@@ -25,6 +25,8 @@ class StatsController extends ChangeNotifier {
   /// Logs recebidos do stream (já ordenados por dia).
   List<ProgressLog> _logs = [];
 
+  bool _disposed = false;
+
   StatsController({
     ProgressRepository? progressRepo,
   }) : _progressRepo = progressRepo ?? ProgressRepository();
@@ -136,6 +138,7 @@ class StatsController extends ChangeNotifier {
       DateTime(2100),
     )
         .listen((logs) {
+      if (_disposed) return;
       _logs = logs;
       notifyListeners();
     });
@@ -145,6 +148,7 @@ class StatsController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _sub?.cancel();
     super.dispose();
   }

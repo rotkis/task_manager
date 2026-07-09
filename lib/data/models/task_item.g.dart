@@ -42,58 +42,68 @@ const TaskItemSchema = CollectionSchema(
       name: r'durationMinutes',
       type: IsarType.long,
     ),
-    r'indexedScheduledDate': PropertySchema(
+    r'durationSeconds': PropertySchema(
       id: 5,
+      name: r'durationSeconds',
+      type: IsarType.long,
+    ),
+    r'indexedScheduledDate': PropertySchema(
+      id: 6,
       name: r'indexedScheduledDate',
       type: IsarType.dateTime,
     ),
     r'isCompleted': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'isCompleted',
       type: IsarType.bool,
     ),
     r'isImportant': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'isImportant',
       type: IsarType.bool,
     ),
     r'notificationId': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'notificationId',
       type: IsarType.long,
     ),
     r'rewardPoints': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'rewardPoints',
       type: IsarType.long,
     ),
     r'scheduledDate': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'scheduledDate',
       type: IsarType.dateTime,
     ),
     r'scheduledTime': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'scheduledTime',
       type: IsarType.dateTime,
     ),
     r'syncGroupCode': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'syncGroupCode',
       type: IsarType.string,
     ),
     r'targetReps': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'targetReps',
       type: IsarType.long,
     ),
+    r'targetSets': PropertySchema(
+      id: 15,
+      name: r'targetSets',
+      type: IsarType.long,
+    ),
     r'title': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TaskItemtypeEnumValueMap,
@@ -160,17 +170,19 @@ void _taskItemSerialize(
   writer.writeDateTime(offsets[2], object.createdAt);
   writer.writeString(offsets[3], object.description);
   writer.writeLong(offsets[4], object.durationMinutes);
-  writer.writeDateTime(offsets[5], object.indexedScheduledDate);
-  writer.writeBool(offsets[6], object.isCompleted);
-  writer.writeBool(offsets[7], object.isImportant);
-  writer.writeLong(offsets[8], object.notificationId);
-  writer.writeLong(offsets[9], object.rewardPoints);
-  writer.writeDateTime(offsets[10], object.scheduledDate);
-  writer.writeDateTime(offsets[11], object.scheduledTime);
-  writer.writeString(offsets[12], object.syncGroupCode);
-  writer.writeLong(offsets[13], object.targetReps);
-  writer.writeString(offsets[14], object.title);
-  writer.writeByte(offsets[15], object.type.index);
+  writer.writeLong(offsets[5], object.durationSeconds);
+  writer.writeDateTime(offsets[6], object.indexedScheduledDate);
+  writer.writeBool(offsets[7], object.isCompleted);
+  writer.writeBool(offsets[8], object.isImportant);
+  writer.writeLong(offsets[9], object.notificationId);
+  writer.writeLong(offsets[10], object.rewardPoints);
+  writer.writeDateTime(offsets[11], object.scheduledDate);
+  writer.writeDateTime(offsets[12], object.scheduledTime);
+  writer.writeString(offsets[13], object.syncGroupCode);
+  writer.writeLong(offsets[14], object.targetReps);
+  writer.writeLong(offsets[15], object.targetSets);
+  writer.writeString(offsets[16], object.title);
+  writer.writeByte(offsets[17], object.type.index);
 }
 
 TaskItem _taskItemDeserialize(
@@ -185,17 +197,19 @@ TaskItem _taskItemDeserialize(
   object.createdAt = reader.readDateTime(offsets[2]);
   object.description = reader.readStringOrNull(offsets[3]);
   object.durationMinutes = reader.readLongOrNull(offsets[4]);
+  object.durationSeconds = reader.readLongOrNull(offsets[5]);
   object.id = id;
-  object.isCompleted = reader.readBool(offsets[6]);
-  object.isImportant = reader.readBool(offsets[7]);
-  object.notificationId = reader.readLongOrNull(offsets[8]);
-  object.rewardPoints = reader.readLong(offsets[9]);
-  object.scheduledDate = reader.readDateTimeOrNull(offsets[10]);
-  object.scheduledTime = reader.readDateTimeOrNull(offsets[11]);
-  object.syncGroupCode = reader.readStringOrNull(offsets[12]);
-  object.targetReps = reader.readLongOrNull(offsets[13]);
-  object.title = reader.readString(offsets[14]);
-  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[15])] ??
+  object.isCompleted = reader.readBool(offsets[7]);
+  object.isImportant = reader.readBool(offsets[8]);
+  object.notificationId = reader.readLongOrNull(offsets[9]);
+  object.rewardPoints = reader.readLong(offsets[10]);
+  object.scheduledDate = reader.readDateTimeOrNull(offsets[11]);
+  object.scheduledTime = reader.readDateTimeOrNull(offsets[12]);
+  object.syncGroupCode = reader.readStringOrNull(offsets[13]);
+  object.targetReps = reader.readLongOrNull(offsets[14]);
+  object.targetSets = reader.readLongOrNull(offsets[15]);
+  object.title = reader.readString(offsets[16]);
+  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[17])] ??
       TaskType.generic;
   return object;
 }
@@ -218,26 +232,30 @@ P _taskItemDeserializeProp<P>(
     case 4:
       return (reader.readLongOrNull(offset)) as P;
     case 5:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 6:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 7:
       return (reader.readBool(offset)) as P;
     case 8:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 9:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 10:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 11:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 12:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 13:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 14:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 15:
+      return (reader.readLongOrNull(offset)) as P;
+    case 16:
+      return (reader.readString(offset)) as P;
+    case 17:
       return (_TaskItemtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           TaskType.generic) as P;
     default:
@@ -856,6 +874,80 @@ extension TaskItemQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.between(
         property: r'durationMinutes',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      durationSecondsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'durationSeconds',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      durationSecondsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'durationSeconds',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      durationSecondsEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'durationSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      durationSecondsGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'durationSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      durationSecondsLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'durationSeconds',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      durationSecondsBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'durationSeconds',
         lower: lower,
         includeLower: includeLower,
         upper: upper,
@@ -1485,6 +1577,76 @@ extension TaskItemQueryFilter
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> targetSetsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'targetSets',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      targetSetsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'targetSets',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> targetSetsEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'targetSets',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> targetSetsGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'targetSets',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> targetSetsLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'targetSets',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> targetSetsBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'targetSets',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> titleEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1736,6 +1898,18 @@ extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByDurationSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationSeconds', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByDurationSecondsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationSeconds', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByIndexedScheduledDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'indexedScheduledDate', Sort.asc);
@@ -1845,6 +2019,18 @@ extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByTargetSets() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetSets', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByTargetSetsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetSets', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
@@ -1929,6 +2115,18 @@ extension TaskItemQuerySortThenBy
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByDurationMinutesDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'durationMinutes', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByDurationSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationSeconds', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByDurationSecondsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'durationSeconds', Sort.desc);
     });
   }
 
@@ -2053,6 +2251,18 @@ extension TaskItemQuerySortThenBy
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByTargetSets() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetSets', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByTargetSetsDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'targetSets', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByTitle() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'title', Sort.asc);
@@ -2108,6 +2318,12 @@ extension TaskItemQueryWhereDistinct
   QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByDurationMinutes() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'durationMinutes');
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByDurationSeconds() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'durationSeconds');
     });
   }
 
@@ -2167,6 +2383,12 @@ extension TaskItemQueryWhereDistinct
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByTargetSets() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'targetSets');
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByTitle(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2216,6 +2438,12 @@ extension TaskItemQueryProperty
   QueryBuilder<TaskItem, int?, QQueryOperations> durationMinutesProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'durationMinutes');
+    });
+  }
+
+  QueryBuilder<TaskItem, int?, QQueryOperations> durationSecondsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'durationSeconds');
     });
   }
 
@@ -2271,6 +2499,12 @@ extension TaskItemQueryProperty
   QueryBuilder<TaskItem, int?, QQueryOperations> targetRepsProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'targetReps');
+    });
+  }
+
+  QueryBuilder<TaskItem, int?, QQueryOperations> targetSetsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'targetSets');
     });
   }
 

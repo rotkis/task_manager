@@ -64,8 +64,10 @@ class NotificationService {
       'task_channel',
       'Task Reminders',
       channelDescription: 'Notifications for scheduled tasks',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
     );
     const iosDetails = DarwinNotificationDetails();
     const details = NotificationDetails(

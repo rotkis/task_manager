@@ -35,10 +35,12 @@ class TasksScreen extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       builder: (ctx) => TimerWidget(
-        durationMinutes: task.durationMinutes ??
-            (task.type == TaskType.pomodoroStudy
-                ? AppConstants.defaultPomodoroFocusMinutes
-                : AppConstants.defaultTimedExerciseMinutes),
+        durationMinutes: task.type == TaskType.pomodoroStudy
+            ? (task.durationMinutes ?? AppConstants.defaultPomodoroFocusMinutes)
+            : 0,
+        durationSeconds: task.type == TaskType.timedExercise
+            ? (task.durationSeconds ?? AppConstants.defaultTimedExerciseSeconds)
+            : null,
         breakDurationMinutes: task.type == TaskType.pomodoroStudy
             ? AppConstants.defaultPomodoroBreakMinutes
             : 0,
@@ -60,6 +62,7 @@ class TasksScreen extends StatelessWidget {
       isScrollControlled: true,
       builder: (ctx) => RepCounterWidget(
         targetReps: task.targetReps ?? AppConstants.defaultRepsTarget,
+        targetSets: task.targetSets ?? AppConstants.defaultSetsTarget,
         onComplete: () {
           Navigator.of(ctx).pop();
           context.read<TaskController>().completeTask(task.id);

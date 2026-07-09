@@ -18,6 +18,8 @@ class CalendarController extends ChangeNotifier {
   /// Mapa: data normalizada (meia-noite) → lista de tarefas daquele dia.
   final Map<DateTime, List<TaskItem>> _tasksByDay = {};
 
+  bool _disposed = false;
+
   /// Dia atualmente selecionado no calendário.
   DateTime _selectedDay = DateTime.now();
 
@@ -65,6 +67,7 @@ class CalendarController extends ChangeNotifier {
   void init() {
     _tasksSub?.cancel();
     _tasksSub = _taskRepo.watchAll().listen((tasks) {
+      if (_disposed) return;
       _buildDayMap(tasks);
       notifyListeners();
     });
@@ -113,6 +116,7 @@ class CalendarController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _tasksSub?.cancel();
     super.dispose();
   }

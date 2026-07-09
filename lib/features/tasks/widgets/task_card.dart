@@ -73,11 +73,12 @@ class TaskCard extends StatelessWidget {
         final d = task.durationMinutes ?? 25;
         return 'Pomodoro $d min';
       case TaskType.timedExercise:
-        final d = task.durationMinutes ?? 1;
-        return 'Timer $d min';
+        final d = task.durationSeconds ?? 60;
+        return 'Timer ${d}s';
       case TaskType.repsExercise:
         final r = task.targetReps ?? 10;
-        return '$r repetições';
+        final s = task.targetSets ?? 3;
+        return '$r reps x $s séries';
     }
   }
 
@@ -111,22 +112,23 @@ class TaskCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                // Ícone + interação conforme tipo
-                if (task.type == TaskType.generic)
-                  Checkbox(
-                    value: task.isCompleted,
-                    onChanged: (_) => onToggleComplete?.call(),
-                  )
-                else
-                  Icon(
-                    _isOverdue ? Icons.warning_amber_rounded : _typeIcon,
-                    color: task.isCompleted
-                        ? theme.colorScheme.primary
-                        : (_isOverdue
-                            ? theme.colorScheme.error
-                            : theme.colorScheme.onSurface),
-                  ),
-                const SizedBox(width: 12),
+                // Checkbox para qualquer tipo
+                Checkbox(
+                  value: task.isCompleted,
+                  onChanged: (_) => onToggleComplete?.call(),
+                ),
+                const SizedBox(width: 4),
+                // Ícone do tipo (apenas informativo)
+                Icon(
+                  _typeIcon,
+                  size: 18,
+                  color: task.isCompleted
+                      ? theme.colorScheme.primary
+                      : (_isOverdue
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.6)),
+                ),
+                const SizedBox(width: 8),
 
                 // Corpo do card
                 Expanded(

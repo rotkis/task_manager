@@ -27,8 +27,10 @@ class TaskItem {
   DateTime? scheduledTime; // horário do dia (combinado com scheduledDate)
 
   // Parâmetros específicos por tipo
-  int? durationMinutes; // pomodoroStudy / timedExercise
-  int? targetReps; // repsExercise
+  int? durationMinutes; // pomodoroStudy (minutos)
+  int? durationSeconds; // timedExercise (segundos)
+  int? targetReps; // repsExercise (repetições por série)
+  int? targetSets; // repsExercise (número de séries)
 
   // Estado
   bool isCompleted = false;

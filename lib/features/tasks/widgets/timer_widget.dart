@@ -8,9 +8,17 @@ import 'package:flutter/material.dart';
 ///
 /// Se [breakDurationMinutes] for maior que 0, o cronômetro opera
 /// em duas fases: foco → pausa → [onFinish] (ciclo pomodoro).
+///
+/// Forneça [durationMinutes] (pomodoro) ou [durationSeconds]
+/// (timedExercise). Se ambos forem fornecidos, [durationSeconds]
+/// tem prioridade.
 class TimerWidget extends StatefulWidget {
-  /// Duração total em minutos (fase de foco).
+  /// Duração total em minutos (usado por pomodoroStudy).
   final int durationMinutes;
+
+  /// Duração total em segundos (usado por timedExercise).
+  /// Se definido, substitui [durationMinutes].
+  final int? durationSeconds;
 
   /// Duração da pausa em minutos (0 = sem pausa).
   final int breakDurationMinutes;
@@ -23,7 +31,8 @@ class TimerWidget extends StatefulWidget {
 
   const TimerWidget({
     super.key,
-    required this.durationMinutes,
+    this.durationMinutes = 0,
+    this.durationSeconds,
     this.breakDurationMinutes = 0,
     this.onFinish,
     this.onCancel,
@@ -39,7 +48,8 @@ class _TimerWidgetState extends State<TimerWidget> {
   bool _isRunning = false;
   bool _isBreak = false; // true = fase de pausa
 
-  int get _totalSeconds => widget.durationMinutes * 60;
+  int get _totalSeconds =>
+      widget.durationSeconds ?? (widget.durationMinutes * 60);
   int get _breakSeconds => widget.breakDurationMinutes * 60;
 
   @override
@@ -95,14 +105,6 @@ class _TimerWidgetState extends State<TimerWidget> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  /// Progresso global: (segundos decorridos) / (segundos totais).
-  double get _globalProgress {
-    final total = _totalSeconds + _breakSeconds;
-    if (total == 0) return 0;
-    final elapsed = total - _remainingSeconds;
-    return elapsed / total;
-  }
-
   /// Progresso da fase atual (foco ou pausa).
   double get _phaseProgress {
     final phaseTotal = _isBreak ? _breakSeconds : _totalSeconds;
@@ -151,25 +153,12 @@ class _TimerWidgetState extends State<TimerWidget> {
           ),
           const SizedBox(height: 12),
 
-          // Barra de progresso global (apenas se tem pausa)
-          if (_breakSeconds > 0) ...[
-            LinearProgressIndicator(
-              value: _globalProgress,
-              minHeight: 4,
-              borderRadius: BorderRadius.circular(2),
-              color: _isBreak
-                  ? theme.colorScheme.secondary
-                  : theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 12),
-          ],
-
           // Barra de progresso da fase atual
           if (_remainingSeconds > 0 || _isBreak)
             LinearProgressIndicator(
               value: 1.0 - _phaseProgress,
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(3),
+              minHeight: 8,
+              borderRadius: BorderRadius.circular(4),
               color: _isBreak
                   ? theme.colorScheme.secondary
                   : theme.colorScheme.primary,

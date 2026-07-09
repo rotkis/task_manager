@@ -35,6 +35,7 @@ class TaskController extends ChangeNotifier {
   List<TaskItem> _todayTasks = [];
   List<TaskItem> _allTasks = [];
   TaskItem? _lastDeletedTask;
+  bool _disposed = false;
 
   TaskController({
     TaskRepository? taskRepo,
@@ -66,12 +67,14 @@ class TaskController extends ChangeNotifier {
   void init() {
     _tasksSub?.cancel();
     _tasksSub = _taskRepo.watchByDate(DateHelpers.today()).listen((tasks) {
+      if (_disposed) return;
       _todayTasks = tasks;
       notifyListeners();
     });
 
     _allTasksSub?.cancel();
     _allTasksSub = _taskRepo.watchAll().listen((tasks) {
+      if (_disposed) return;
       _allTasks = tasks;
       notifyListeners();
     });
@@ -79,6 +82,15 @@ class TaskController extends ChangeNotifier {
 
   /// Lista completa de todas as tarefas (usada pela tela de compartilhar).
   List<TaskItem> get allTasks => _allTasks;
+
+  /// [TEST-ONLY] Injeta tarefas diretamente sem depender do stream do Isar.
+  /// Usado exclusivamente por golden/regression tests que não podem manter
+  /// um stream vivo no ambiente testWidgets.
+  @visibleForTesting
+  void setTodayTasksDirectly(List<TaskItem> tasks) {
+    _todayTasks = tasks;
+    notifyListeners();
+  }
 
   // ─── CRUD ──────────────────────────────────────────────────────────
 
@@ -171,6 +183,7 @@ class TaskController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _tasksSub?.cancel();
     _allTasksSub?.cancel();
     super.dispose();

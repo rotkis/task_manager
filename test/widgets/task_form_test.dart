@@ -79,7 +79,8 @@ void main() {
       await tester.pumpWidget(_buildTestApp(controller, task: task));
       await tester.pumpAndSettle();
 
-      expect(find.text('Meta de repetições'), findsOneWidget);
+      expect(find.text('Repetições por série'), findsOneWidget);
+      expect(find.text('Número de séries'), findsOneWidget);
     });
 
     testWidgets('não exibe campos específicos para tarefa genérica',
@@ -88,7 +89,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Duração do foco (minutos)'), findsNothing);
-      expect(find.text('Meta de repetições'), findsNothing);
+      expect(find.text('Repetições por série'), findsNothing);
+      expect(find.text('Número de séries'), findsNothing);
     });
   });
 }

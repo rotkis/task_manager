@@ -66,8 +66,14 @@ String encodeTasks(List<TaskItem> tasks) {
     if (task.durationMinutes != null) {
       map['du'] = task.durationMinutes;
     }
+    if (task.durationSeconds != null) {
+      map['ds'] = task.durationSeconds;
+    }
     if (task.targetReps != null) {
       map['r'] = task.targetReps;
+    }
+    if (task.targetSets != null) {
+      map['rs'] = task.targetSets;
     }
     if (task.isImportant) {
       map['i'] = true;
@@ -180,7 +186,9 @@ TaskItem? _mapToTask(Map<String, dynamic> map, DateTime today, String hash) {
   final isImportant = map['i'] as bool? ?? false;
   final description = map['d'] as String?;
   final durationMinutes = map['du'] as int?;
+  final durationSeconds = map['ds'] as int?;
   final targetReps = map['r'] as int?;
+  final targetSets = map['rs'] as int?;
   final syncGroupCode = map['sg'] as String? ?? hash;
 
   final task = TaskItem()
@@ -190,7 +198,9 @@ TaskItem? _mapToTask(Map<String, dynamic> map, DateTime today, String hash) {
     ..scheduledDate = scheduledDate
     ..scheduledTime = scheduledTime
     ..durationMinutes = durationMinutes
+    ..durationSeconds = durationSeconds
     ..targetReps = targetReps
+    ..targetSets = targetSets
     ..rewardPoints = rewardPoints
     ..isImportant = isImportant
     ..syncGroupCode = syncGroupCode;

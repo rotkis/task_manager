@@ -31,7 +31,9 @@ class _TaskFormState extends State<TaskForm> {
   late final TextEditingController _titleCtrl;
   late final TextEditingController _descCtrl;
   late final TextEditingController _repsCtrl;
-  late final TextEditingController _durationCtrl;
+  late final TextEditingController _setsCtrl;
+  late final TextEditingController
+      _durationCtrl; // pomodoroStudy (min) / timedExercise (s)
   late final TextEditingController _pointsCtrl;
 
   TaskType _type = TaskType.generic;
@@ -49,8 +51,15 @@ class _TaskFormState extends State<TaskForm> {
       text: t?.targetReps?.toString() ??
           AppConstants.defaultRepsTarget.toString(),
     );
+    _setsCtrl = TextEditingController(
+      text: t?.targetSets?.toString() ??
+          AppConstants.defaultSetsTarget.toString(),
+    );
     _durationCtrl = TextEditingController(
-      text: t?.durationMinutes?.toString() ?? _defaultDuration.toString(),
+      text: (t?.type == TaskType.timedExercise
+              ? t?.durationSeconds?.toString()
+              : t?.durationMinutes?.toString()) ??
+          _defaultDuration.toString(),
     );
     _pointsCtrl = TextEditingController(
       text: t?.rewardPoints.toString() ??
@@ -71,7 +80,7 @@ class _TaskFormState extends State<TaskForm> {
   int get _defaultDuration {
     switch (widget.task?.type ?? _type) {
       case TaskType.timedExercise:
-        return AppConstants.defaultTimedExerciseMinutes;
+        return AppConstants.defaultTimedExerciseSeconds;
       case TaskType.pomodoroStudy:
         return AppConstants.defaultPomodoroFocusMinutes;
       default:
@@ -84,6 +93,7 @@ class _TaskFormState extends State<TaskForm> {
     _titleCtrl.dispose();
     _descCtrl.dispose();
     _repsCtrl.dispose();
+    _setsCtrl.dispose();
     _durationCtrl.dispose();
     _pointsCtrl.dispose();
     super.dispose();
@@ -137,16 +147,25 @@ class _TaskFormState extends State<TaskForm> {
     switch (_type) {
       case TaskType.generic:
         task.durationMinutes = null;
+        task.durationSeconds = null;
         task.targetReps = null;
       case TaskType.pomodoroStudy:
-      case TaskType.timedExercise:
         task.durationMinutes =
+            int.tryParse(_durationCtrl.text) ?? _defaultDuration;
+        task.durationSeconds = null;
+        task.targetReps = null;
+      case TaskType.timedExercise:
+        task.durationMinutes = null;
+        task.durationSeconds =
             int.tryParse(_durationCtrl.text) ?? _defaultDuration;
         task.targetReps = null;
       case TaskType.repsExercise:
         task.durationMinutes = null;
+        task.durationSeconds = null;
         task.targetReps =
             int.tryParse(_repsCtrl.text) ?? AppConstants.defaultRepsTarget;
+        task.targetSets =
+            int.tryParse(_setsCtrl.text) ?? AppConstants.defaultSetsTarget;
     }
 
     if (isEditing) {
@@ -212,7 +231,7 @@ class _TaskFormState extends State<TaskForm> {
                 // Atualiza duração sugerida ao trocar de tipo
                 if (v == TaskType.timedExercise) {
                   _durationCtrl.text =
-                      AppConstants.defaultTimedExerciseMinutes.toString();
+                      AppConstants.defaultTimedExerciseSeconds.toString();
                 } else if (v == TaskType.pomodoroStudy) {
                   _durationCtrl.text =
                       AppConstants.defaultPomodoroFocusMinutes.toString();
@@ -247,7 +266,7 @@ class _TaskFormState extends State<TaskForm> {
                 decoration: InputDecoration(
                   labelText: _type == TaskType.pomodoroStudy
                       ? 'Duração do foco (minutos)'
-                      : 'Duração (minutos)',
+                      : 'Duração (segundos)',
                 ),
                 keyboardType: TextInputType.number,
                 validator: (v) {
@@ -263,7 +282,20 @@ class _TaskFormState extends State<TaskForm> {
               TextFormField(
                 controller: _repsCtrl,
                 decoration: const InputDecoration(
-                  labelText: 'Meta de repetições',
+                  labelText: 'Repetições por série',
+                ),
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  final n = int.tryParse(v ?? '');
+                  if (n == null || n < 1) return 'Valor mínimo: 1';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _setsCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Número de séries',
                 ),
                 keyboardType: TextInputType.number,
                 validator: (v) {
