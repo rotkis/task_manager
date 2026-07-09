@@ -34,6 +34,21 @@ passar limpo antes de reportar a tarefa como concluída.
 - Um módulo do `tasks.md` por vez. Não comece o próximo módulo sem o
   anterior passar em format/analyze/test.
 
+## Known issues
+
+### `alarm` v5.5.0 — compileSdkVersion incompatível
+
+O pacote `alarm` declara `compileSdkVersion=34` mas depende de `flutter_fgbg`
+que exige 35+. O build falha com:
+
+```
+Dependency ':flutter_fgbg' requires libraries and applications that
+depend on it to compile against version 35 or later of the Android APIs.
+```
+
+**Solução**: Executar `bash tools/fix_alarm_compile_sdk.sh` depois de
+`flutter pub get`. O script faz o patch no cache do pub.
+
 ## Fora de escopo (não implementar sem pedido explícito)
 - Login / conta de usuário / servidor de sync contínuo.
 - Suporte a iOS/desktop na v1.

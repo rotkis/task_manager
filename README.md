@@ -1,17 +1,31 @@
-# task_manager
+# Task Manager
 
-A new Flutter project.
+App anti-procrastinação com Flutter e Isar.
 
-## Getting Started
+## Pré-requisitos
 
-This project is a starting point for a Flutter application.
+- Flutter SDK >=3.4.0
+- Dart SDK >=3.4.0
+- Dispositivo ou emulador Android
 
-A few resources to get you started if this is your first Flutter project:
+## Setup
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter pub get
+# Aplica patch necessário no pacote alarm (ver seção abaixo)
+bash tools/fix_alarm_compile_sdk.sh
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Build & Run
+
+```bash
+flutter run
+```
+
+## Nota sobre o pacote `alarm`
+
+O pacote `alarm` v5.5.0 declara `compileSdkVersion=34` no Android mas depende
+de `flutter_fgbg` que exige 35+. O script `tools/fix_alarm_compile_sdk.sh`
+faz o patch necessário no cache do pub.
+
+Execute o script **sempre depois de** `flutter pub get`.

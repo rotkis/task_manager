@@ -41,8 +41,11 @@ class TaskItem {
   // Recompensa
   int rewardPoints = 10;
 
-  // Notificação/alarme associado (id gerado pelo flutter_local_notifications)
+  // Notificação associada (id gerado pelo flutter_local_notifications)
   int? notificationId;
+
+  /// ID do alarme (pacote `alarm`) para tarefas importantes.
+  int? alarmId;
 
   // Sincronização entre usuários: tarefas compartilhadas via código
   // carregam o mesmo syncGroupCode, mas cada usuário pode editar

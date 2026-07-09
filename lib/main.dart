@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'data/isar/isar_service.dart';
+import 'features/notifications/alarm_service.dart';
+import 'features/notifications/notification_service.dart';
 import 'features/tasks/controllers/task_controller.dart';
 import 'features/tasks/screens/tasks_screen.dart';
 import 'theme/app_theme.dart';
@@ -9,11 +11,28 @@ import 'theme/app_theme.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await IsarService.open();
-  runApp(const TaskManagerApp());
+
+  // Inicializa serviços de notificação e alarme
+  final notificationService = NotificationService();
+  final alarmService = AlarmService();
+  await notificationService.init();
+  await alarmService.init();
+
+  runApp(TaskManagerApp(
+    notificationService: notificationService,
+    alarmService: alarmService,
+  ));
 }
 
 class TaskManagerApp extends StatefulWidget {
-  const TaskManagerApp({super.key});
+  final NotificationService notificationService;
+  final AlarmService alarmService;
+
+  const TaskManagerApp({
+    super.key,
+    required this.notificationService,
+    required this.alarmService,
+  });
 
   @override
   State<TaskManagerApp> createState() => _TaskManagerAppState();
@@ -25,7 +44,10 @@ class _TaskManagerAppState extends State<TaskManagerApp> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => TaskController()..init(),
+      create: (_) => TaskController(
+        notificationService: widget.notificationService,
+        alarmService: widget.alarmService,
+      )..init(),
       child: MaterialApp(
         title: 'Task Manager',
         debugShowCheckedModeBanner: false,

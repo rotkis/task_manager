@@ -7,7 +7,7 @@ part of 'task_item.dart';
 // **************************************************************************
 
 // coverage:ignore-file
-// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types, experimental_member_use
+// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 
 extension GetTaskItemCollection on Isar {
   IsarCollection<TaskItem> get taskItems => this.collection();
@@ -17,78 +17,83 @@ const TaskItemSchema = CollectionSchema(
   name: r'TaskItem',
   id: 2171180427076855156,
   properties: {
-    r'completedAt': PropertySchema(
+    r'alarmId': PropertySchema(
       id: 0,
+      name: r'alarmId',
+      type: IsarType.long,
+    ),
+    r'completedAt': PropertySchema(
+      id: 1,
       name: r'completedAt',
       type: IsarType.dateTime,
     ),
     r'createdAt': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
     r'description': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'description',
       type: IsarType.string,
     ),
     r'durationMinutes': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'durationMinutes',
       type: IsarType.long,
     ),
     r'indexedScheduledDate': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'indexedScheduledDate',
       type: IsarType.dateTime,
     ),
     r'isCompleted': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'isCompleted',
       type: IsarType.bool,
     ),
     r'isImportant': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'isImportant',
       type: IsarType.bool,
     ),
     r'notificationId': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'notificationId',
       type: IsarType.long,
     ),
     r'rewardPoints': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'rewardPoints',
       type: IsarType.long,
     ),
     r'scheduledDate': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'scheduledDate',
       type: IsarType.dateTime,
     ),
     r'scheduledTime': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'scheduledTime',
       type: IsarType.dateTime,
     ),
     r'syncGroupCode': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'syncGroupCode',
       type: IsarType.string,
     ),
     r'targetReps': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'targetReps',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TaskItemtypeEnumValueMap,
@@ -150,21 +155,22 @@ void _taskItemSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.completedAt);
-  writer.writeDateTime(offsets[1], object.createdAt);
-  writer.writeString(offsets[2], object.description);
-  writer.writeLong(offsets[3], object.durationMinutes);
-  writer.writeDateTime(offsets[4], object.indexedScheduledDate);
-  writer.writeBool(offsets[5], object.isCompleted);
-  writer.writeBool(offsets[6], object.isImportant);
-  writer.writeLong(offsets[7], object.notificationId);
-  writer.writeLong(offsets[8], object.rewardPoints);
-  writer.writeDateTime(offsets[9], object.scheduledDate);
-  writer.writeDateTime(offsets[10], object.scheduledTime);
-  writer.writeString(offsets[11], object.syncGroupCode);
-  writer.writeLong(offsets[12], object.targetReps);
-  writer.writeString(offsets[13], object.title);
-  writer.writeByte(offsets[14], object.type.index);
+  writer.writeLong(offsets[0], object.alarmId);
+  writer.writeDateTime(offsets[1], object.completedAt);
+  writer.writeDateTime(offsets[2], object.createdAt);
+  writer.writeString(offsets[3], object.description);
+  writer.writeLong(offsets[4], object.durationMinutes);
+  writer.writeDateTime(offsets[5], object.indexedScheduledDate);
+  writer.writeBool(offsets[6], object.isCompleted);
+  writer.writeBool(offsets[7], object.isImportant);
+  writer.writeLong(offsets[8], object.notificationId);
+  writer.writeLong(offsets[9], object.rewardPoints);
+  writer.writeDateTime(offsets[10], object.scheduledDate);
+  writer.writeDateTime(offsets[11], object.scheduledTime);
+  writer.writeString(offsets[12], object.syncGroupCode);
+  writer.writeLong(offsets[13], object.targetReps);
+  writer.writeString(offsets[14], object.title);
+  writer.writeByte(offsets[15], object.type.index);
 }
 
 TaskItem _taskItemDeserialize(
@@ -174,21 +180,22 @@ TaskItem _taskItemDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = TaskItem();
-  object.completedAt = reader.readDateTimeOrNull(offsets[0]);
-  object.createdAt = reader.readDateTime(offsets[1]);
-  object.description = reader.readStringOrNull(offsets[2]);
-  object.durationMinutes = reader.readLongOrNull(offsets[3]);
+  object.alarmId = reader.readLongOrNull(offsets[0]);
+  object.completedAt = reader.readDateTimeOrNull(offsets[1]);
+  object.createdAt = reader.readDateTime(offsets[2]);
+  object.description = reader.readStringOrNull(offsets[3]);
+  object.durationMinutes = reader.readLongOrNull(offsets[4]);
   object.id = id;
-  object.isCompleted = reader.readBool(offsets[5]);
-  object.isImportant = reader.readBool(offsets[6]);
-  object.notificationId = reader.readLongOrNull(offsets[7]);
-  object.rewardPoints = reader.readLong(offsets[8]);
-  object.scheduledDate = reader.readDateTimeOrNull(offsets[9]);
-  object.scheduledTime = reader.readDateTimeOrNull(offsets[10]);
-  object.syncGroupCode = reader.readStringOrNull(offsets[11]);
-  object.targetReps = reader.readLongOrNull(offsets[12]);
-  object.title = reader.readString(offsets[13]);
-  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[14])] ??
+  object.isCompleted = reader.readBool(offsets[6]);
+  object.isImportant = reader.readBool(offsets[7]);
+  object.notificationId = reader.readLongOrNull(offsets[8]);
+  object.rewardPoints = reader.readLong(offsets[9]);
+  object.scheduledDate = reader.readDateTimeOrNull(offsets[10]);
+  object.scheduledTime = reader.readDateTimeOrNull(offsets[11]);
+  object.syncGroupCode = reader.readStringOrNull(offsets[12]);
+  object.targetReps = reader.readLongOrNull(offsets[13]);
+  object.title = reader.readString(offsets[14]);
+  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[15])] ??
       TaskType.generic;
   return object;
 }
@@ -201,34 +208,36 @@ P _taskItemDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 1:
-      return (reader.readDateTime(offset)) as P;
-    case 2:
-      return (reader.readStringOrNull(offset)) as P;
-    case 3:
       return (reader.readLongOrNull(offset)) as P;
-    case 4:
+    case 1:
+      return (reader.readDateTimeOrNull(offset)) as P;
+    case 2:
       return (reader.readDateTime(offset)) as P;
+    case 3:
+      return (reader.readStringOrNull(offset)) as P;
+    case 4:
+      return (reader.readLongOrNull(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readDateTime(offset)) as P;
     case 6:
       return (reader.readBool(offset)) as P;
     case 7:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 8:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 9:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 10:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 11:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 12:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 13:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 14:
+      return (reader.readString(offset)) as P;
+    case 15:
       return (_TaskItemtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           TaskType.generic) as P;
     default:
@@ -439,6 +448,75 @@ extension TaskItemQueryWhere on QueryBuilder<TaskItem, TaskItem, QWhereClause> {
 
 extension TaskItemQueryFilter
     on QueryBuilder<TaskItem, TaskItem, QFilterCondition> {
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> alarmIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'alarmId',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> alarmIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'alarmId',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> alarmIdEqualTo(
+      int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'alarmId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> alarmIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'alarmId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> alarmIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'alarmId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> alarmIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'alarmId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> completedAtIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -1598,6 +1676,18 @@ extension TaskItemQueryLinks
     on QueryBuilder<TaskItem, TaskItem, QFilterCondition> {}
 
 extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByAlarmId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'alarmId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByAlarmIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'alarmId', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByCompletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'completedAt', Sort.asc);
@@ -1782,6 +1872,18 @@ extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
 
 extension TaskItemQuerySortThenBy
     on QueryBuilder<TaskItem, TaskItem, QSortThenBy> {
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByAlarmId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'alarmId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByAlarmIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'alarmId', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByCompletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'completedAt', Sort.asc);
@@ -1978,6 +2080,12 @@ extension TaskItemQuerySortThenBy
 
 extension TaskItemQueryWhereDistinct
     on QueryBuilder<TaskItem, TaskItem, QDistinct> {
+  QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByAlarmId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'alarmId');
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByCompletedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'completedAt');
@@ -2078,6 +2186,12 @@ extension TaskItemQueryProperty
   QueryBuilder<TaskItem, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<TaskItem, int?, QQueryOperations> alarmIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'alarmId');
     });
   }
 

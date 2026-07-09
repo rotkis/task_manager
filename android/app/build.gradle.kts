@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "com.rotkis.task_manager"
-    compileSdk = flutter.compileSdkVersion
+    // flutter.compileSdkVersion (34) é insuficiente para o pacote `alarm`
+    // que depende de flutter_fgbg com compileSdk 35+. Forçamos 36.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
