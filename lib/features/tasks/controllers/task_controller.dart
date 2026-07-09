@@ -25,6 +25,10 @@ class TaskController extends ChangeNotifier {
   final NotificationService _notificationService;
   final AlarmService _alarmService;
 
+  /// Expõe o repositório de tarefas para controllers de outras features
+  /// (ex: [CalendarController]) sem violar a arquitetura de camadas.
+  TaskRepository get taskRepo => _taskRepo;
+
   StreamSubscription<List<TaskItem>>? _tasksSub;
 
   List<TaskItem> _todayTasks = [];

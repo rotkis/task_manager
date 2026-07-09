@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'data/isar/isar_service.dart';
 import 'features/notifications/alarm_service.dart';
 import 'features/notifications/notification_service.dart';
+import 'features/calendar/screens/calendar_screen.dart';
 import 'features/tasks/controllers/task_controller.dart';
 import 'features/tasks/screens/tasks_screen.dart';
 import 'theme/app_theme.dart';
@@ -84,7 +85,7 @@ class _HomeShellState extends State<HomeShell> {
 
   static const _pages = <Widget>[
     TasksScreen(),
-    Center(child: Text('Cronograma — Módulo 3')),
+    CalendarScreen(),
     Center(child: Text('Evolução — Módulo 4')),
   ];
 
