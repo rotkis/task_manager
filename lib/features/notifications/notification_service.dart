@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/models/task_item.dart';
@@ -17,7 +16,6 @@ class NotificationService {
   /// `main()` do app.
   Future<void> init() async {
     if (_initialized) return;
-    tz.initializeTimeZones();
 
     _plugin = FlutterLocalNotificationsPlugin();
 
@@ -76,16 +74,42 @@ class NotificationService {
       iOS: iosDetails,
     );
 
+    // ─── Log de depuração ─────────────────────────────────────────
+    final tzScheduled = tz.TZDateTime.from(scheduledDateTime, tz.local);
+    debugPrint('''
+━━━ [NotificationService] schedule() ━━━
+task.id:          ${task.id}
+task.title:       ${task.title}
+scheduledDateTime local: $scheduledDateTime
+scheduledDateTime ms:    ${scheduledDateTime.millisecondsSinceEpoch}
+tz.local:         ${tz.local.name}
+tzScheduled:      $tzScheduled
+tzScheduled ms:   ${tzScheduled.millisecondsSinceEpoch}
+now local:        ${DateTime.now()}
+now ms:           ${DateTime.now().millisecondsSinceEpoch}
+diff (s):         ${tzScheduled.difference(tz.TZDateTime.now(tz.local)).inSeconds}s
+notificationId:   $notificationId
+channel:          task_channel
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
+
     await _plugin!.zonedSchedule(
       notificationId,
       task.title,
       task.description ?? 'Você tem uma tarefa para fazer',
-      tz.TZDateTime.from(scheduledDateTime, tz.local),
+      tzScheduled,
       details,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exact,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
+
+    // ─── Verifica se a notificação foi registrada ────────────
+    final pending = await _plugin!.pendingNotificationRequests();
+    debugPrint('''
+━━━ [NotificationService] pendingNotificationRequests ━━━
+Total pending: ${pending.length}
+${pending.map((r) => '  id=${r.id} title="${r.title}" body="${r.body}"').join('\n')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
   }
 
   /// Solicita permissão de notificação no Android 13+.
@@ -107,6 +131,68 @@ class NotificationService {
   Future<void> cancel(int notificationId) async {
     if (_plugin == null) return;
     await _plugin!.cancel(notificationId);
+  }
+
+  /// Agenda uma notificação de teste [seconds] no futuro para diagnosticar
+  /// se o mecanismo de `zonedSchedule` está funcionando no dispositivo.
+  ///
+  /// Usa um id fixo alto (2³¹-2) para não conflitar com ids de tarefas.
+  Future<void> scheduleDebugTest({int seconds = 30}) async {
+    if (!_initialized) await init();
+    await requestPermissions();
+
+    const debugId = 2147483646; // max int32 - 1
+    await cancel(debugId);
+
+    final testMoment = DateTime.now().add(Duration(seconds: seconds));
+    final tzTestMoment = tz.TZDateTime.from(testMoment, tz.local);
+
+    const androidDetails = AndroidNotificationDetails(
+      'task_channel',
+      'Task Reminders',
+      channelDescription: 'Notifications for scheduled tasks',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+      enableVibration: true,
+      fullScreenIntent: true,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
+
+    debugPrint('''
+━━━ [NotificationService] scheduleDebugTest() ━━━
+seconds:          $seconds
+testMoment:       $testMoment
+tz.local:         ${tz.local.name}
+tzTestMoment:     $tzTestMoment
+diff (s):         ${tzTestMoment.difference(tz.TZDateTime.now(tz.local)).inSeconds}s
+debugId:          $debugId
+mode:             ${AndroidScheduleMode.exact}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
+
+    // Usamos alarmClock (AlarmManager.setAlarmClock) para testar se o
+    // problema é específico do setExact() ou mais geral.
+    await _plugin!.zonedSchedule(
+      debugId,
+      '🔔 Teste de agendamento',
+      'Se você está vendo isto, o zonedSchedule funciona! '
+          '(${DateTime.now().second}s)',
+      tzTestMoment,
+      details,
+      androidScheduleMode: AndroidScheduleMode.alarmClock,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+
+    final pending = await _plugin!.pendingNotificationRequests();
+    debugPrint('''
+━━━ [NotificationService] debugTest pending ━━━
+Total pending: ${pending.length}
+${pending.map((r) => '  id=${r.id} title="${r.title}" body="${r.body}"').join('\n')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
   }
 
   /// Cancela todas as notificações agendadas.

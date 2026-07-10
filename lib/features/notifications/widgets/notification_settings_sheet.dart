@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../../core/utils/permission_helper.dart';
+import '../notification_service.dart';
 
 /// Bottom sheet com o estado das permissões de notificação e alarme, botões
 /// para ativar cada uma, botão de teste e aviso específico para MIUI.
@@ -32,7 +33,9 @@ class NotificationSettingsSheet extends StatefulWidget {
 
 class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   final _notifPlugin = FlutterLocalNotificationsPlugin();
+  final _notificationService = NotificationService();
   bool _loading = true;
+  bool _schedulingTest = false;
 
   bool _notifGranted = false;
   bool _exactAlarmGranted = false;
@@ -50,6 +53,17 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
       final notif = await PermissionHelper.checkNotificationPermission();
       final alarm = await PermissionHelper.checkExactAlarmPermission();
       final battery = await PermissionHelper.isBatteryOptimizationIgnored();
+
+      debugPrint('''
+━━━ [NotificationSettingsSheet] _load() ━━━
+notifGranted:       $notif
+exactAlarmGranted:  $alarm
+batteryOk:          $battery
+OBS: se exactAlarmGranted=true mas o app NÃO aparece em
+     Configurações > Apps > Acesso especial > Alarmes e lembretes,
+     então a API canScheduleExactAlarms() está mentindo no MIUI.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
+
       if (!mounted) return;
       setState(() {
         _notifGranted = notif;
@@ -57,9 +71,34 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
         _batteryOk = battery;
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('━━━ [NotificationSettingsSheet] _load() error: $e');
       if (!mounted) return;
       setState(() => _loading = false);
+    }
+  }
+
+  // ─── Testar agendamento ───────────────────────────────────────────
+
+  Future<void> _scheduleDebugTest() async {
+    setState(() => _schedulingTest = true);
+    try {
+      await _notificationService.scheduleDebugTest(seconds: 30);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Teste agendado! Aguarde 30 segundos com o app fechado.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _schedulingTest = false);
     }
   }
 
@@ -172,7 +211,21 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                   onAction: _exactAlarmGranted
                       ? null
                       : () async {
-                          await PermissionHelper.openExactAlarmSettings();
+                          final messenger = ScaffoldMessenger.of(context);
+                          final ok =
+                              await PermissionHelper.openExactAlarmSettings();
+                          if (!mounted) return;
+                          if (!ok) {
+                            messenger.showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Não foi possível abrir as configurações. '
+                                  'Vá manualmente em: Configurações > Apps > '
+                                  'Acesso especial > Alarmes e lembretes',
+                                ),
+                              ),
+                            );
+                          }
                           await Future.delayed(
                               const Duration(milliseconds: 500));
                           _load();
@@ -204,11 +257,23 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
               ],
               const SizedBox(height: 20),
 
-              // ─── Botão Testar ──────────────────────────────────
+              // ─── Botões Testar ──────────────────────────────────
               FilledButton.icon(
                 icon: const Icon(Icons.flash_on),
-                label: const Text('Testar agora'),
+                label: const Text('Testar agora (imediato)'),
                 onPressed: _testNotification,
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: _schedulingTest
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.schedule),
+                label: const Text('Agendar teste em 30s'),
+                onPressed: _schedulingTest ? null : _scheduleDebugTest,
               ),
               const SizedBox(height: 24),
 
@@ -241,11 +306,13 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
                       'permissões acima ativadas o sistema pode bloquear '
                       'notificações em segundo plano.\n\n'
                       'Para garantir o funcionamento:\n'
-                      '1. Configurações > Apps > Gerenciar apps > '
+                      '1. Configurações > Apps > Acesso especial > '
+                      'Alarmes e lembretes > ativar para Task Manager\n'
+                      '2. Configurações > Apps > Gerenciar apps > '
                       'Task Manager > Bateria > "Sem restrições"\n'
-                      '2. Configurações > Apps > Permissões de início '
+                      '3. Configurações > Apps > Permissões de início '
                       'automático > ativar para Task Manager\n'
-                      '3. Configurações > Notificações > Task Manager > '
+                      '4. Configurações > Notificações > Task Manager > '
                       'ativar "Permitir notificações" e "Pop-up"',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color:

@@ -36,6 +36,10 @@ class TaskItem {
   bool isCompleted = false;
   DateTime? completedAt;
 
+  /// Se falso, nenhuma notificação/alarme é agendado para esta tarefa,
+  /// mesmo que tenha data/horário e/ou isImportant = true.
+  bool isNotificationEnabled = true;
+
   /// Se verdadeiro, usa alarme insistente (pacote `alarm`) em vez de
   /// notificação simples. Ver plan.md seção 2.1.
   bool isImportant = false;

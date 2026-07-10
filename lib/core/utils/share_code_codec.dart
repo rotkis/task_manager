@@ -20,6 +20,7 @@ import '../../data/models/task_item.dart';
 //   r   – targetReps (opcional)
 //   p   – rewardPoints
 //   i   – isImportant (opcional, default false)
+//   n   – isNotificationEnabled (opcional, default true)
 //   sg  – syncGroupCode (opcional, só para rastreio visual)
 // ---------------------------------------------------------------------------
 
@@ -77,6 +78,9 @@ String encodeTasks(List<TaskItem> tasks) {
     }
     if (task.isImportant) {
       map['i'] = true;
+    }
+    if (!task.isNotificationEnabled) {
+      map['n'] = false;
     }
     if (task.syncGroupCode != null) {
       map['sg'] = task.syncGroupCode;
@@ -184,6 +188,7 @@ TaskItem? _mapToTask(Map<String, dynamic> map, DateTime today, String hash) {
 
   final rewardPoints = map['p'] as int? ?? AppConstants.defaultRewardPoints;
   final isImportant = map['i'] as bool? ?? false;
+  final isNotificationEnabled = map['n'] as bool? ?? true;
   final description = map['d'] as String?;
   final durationMinutes = map['du'] as int?;
   final durationSeconds = map['ds'] as int?;
@@ -203,6 +208,7 @@ TaskItem? _mapToTask(Map<String, dynamic> map, DateTime today, String hash) {
     ..targetSets = targetSets
     ..rewardPoints = rewardPoints
     ..isImportant = isImportant
+    ..isNotificationEnabled = isNotificationEnabled
     ..syncGroupCode = syncGroupCode;
 
   return task;

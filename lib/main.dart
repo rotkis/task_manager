@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:timezone/data/latest_all.dart' as tz_data;
+import 'package:timezone/timezone.dart' as tz;
 
+import 'core/utils/permission_helper.dart';
 import 'data/isar/isar_service.dart';
 import 'data/repositories/share_repository.dart';
 import 'features/notifications/alarm_service.dart';
@@ -19,6 +22,21 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('pt_BR');
   await IsarService.open();
+
+  // ─── Timezone ───────────────────────────────────────────────────
+  // O tz.initializeTimeZones() sempre reseta tz.local para UTC.
+  // Precisamos obter o timezone real do dispositivo e setá-lo.
+  tz_data.initializeTimeZones();
+  try {
+    final deviceTz = await PermissionHelper.getDeviceTimezone();
+    if (deviceTz != null && deviceTz.isNotEmpty) {
+      tz.setLocalLocation(tz.getLocation(deviceTz));
+      debugPrint('━━━ [main] tz.local set to: $deviceTz');
+    }
+  } catch (e) {
+    debugPrint('━━━ [main] timezone detection failed: $e (using UTC)');
+    // Fallback: tz.local permanece UTC (default do initializeTimeZones)
+  }
 
   // Inicializa serviços de notificação e alarme
   final notificationService = NotificationService();

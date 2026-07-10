@@ -39,6 +39,7 @@ class _TaskFormState extends State<TaskForm> {
   TaskType _type = TaskType.generic;
   DateTime? _scheduledDate;
   DateTime? _scheduledTime;
+  bool _isNotificationEnabled = true;
   bool _isImportant = false;
 
   @override
@@ -73,7 +74,11 @@ class _TaskFormState extends State<TaskForm> {
       _type = t.type;
       _scheduledDate = t.scheduledDate ?? DateHelpers.today();
       _scheduledTime = t.scheduledTime;
+      _isNotificationEnabled = t.isNotificationEnabled;
       _isImportant = t.isImportant;
+    } else if (_scheduledDate != null && _scheduledTime != null) {
+      // Nova tarefa com horário: notificação ligada por padrão
+      _isNotificationEnabled = true;
     }
   }
 
@@ -141,7 +146,11 @@ class _TaskFormState extends State<TaskForm> {
 
     task.rewardPoints =
         int.tryParse(_pointsCtrl.text) ?? AppConstants.defaultRewardPoints;
-    task.isImportant = _isImportant;
+    task.isNotificationEnabled =
+        _scheduledDate != null && _scheduledTime != null
+            ? _isNotificationEnabled
+            : false;
+    task.isImportant = _isImportant && task.isNotificationEnabled;
 
     // Limpa campos irrelevantes para o tipo antes de salvar
     switch (_type) {
@@ -372,13 +381,32 @@ class _TaskFormState extends State<TaskForm> {
             ),
             const SizedBox(height: 12),
 
+            // ─── Notificar ────────────────────────────────────
+            // Só faz sentido se data e horário estiverem preenchidos
+            if (_scheduledDate != null && _scheduledTime != null)
+              SwitchListTile(
+                title: const Text('Notificar'),
+                subtitle: const Text(
+                    'Lembrar no horário agendado (notificação ou alarme)'),
+                value: _isNotificationEnabled,
+                onChanged: (v) => setState(() {
+                  _isNotificationEnabled = v;
+                  // Se desligar notificação, "Importante" perde efeito
+                  if (!v) _isImportant = false;
+                }),
+              ),
+
             // ─── Importante (alarme insistente) ──────────────
             SwitchListTile(
               title: const Text('Importante (alarme com som)'),
               subtitle: const Text(
                   'Toca alarme insistente em vez de notificação simples'),
               value: _isImportant,
-              onChanged: (v) => setState(() => _isImportant = v),
+              onChanged: (_isNotificationEnabled &&
+                      _scheduledDate != null &&
+                      _scheduledTime != null)
+                  ? (v) => setState(() => _isImportant = v)
+                  : null,
             ),
           ],
         ),

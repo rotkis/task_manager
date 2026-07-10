@@ -62,48 +62,53 @@ const TaskItemSchema = CollectionSchema(
       name: r'isImportant',
       type: IsarType.bool,
     ),
-    r'notificationId': PropertySchema(
+    r'isNotificationEnabled': PropertySchema(
       id: 9,
+      name: r'isNotificationEnabled',
+      type: IsarType.bool,
+    ),
+    r'notificationId': PropertySchema(
+      id: 10,
       name: r'notificationId',
       type: IsarType.long,
     ),
     r'rewardPoints': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'rewardPoints',
       type: IsarType.long,
     ),
     r'scheduledDate': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'scheduledDate',
       type: IsarType.dateTime,
     ),
     r'scheduledTime': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'scheduledTime',
       type: IsarType.dateTime,
     ),
     r'syncGroupCode': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'syncGroupCode',
       type: IsarType.string,
     ),
     r'targetReps': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'targetReps',
       type: IsarType.long,
     ),
     r'targetSets': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'targetSets',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TaskItemtypeEnumValueMap,
@@ -174,15 +179,16 @@ void _taskItemSerialize(
   writer.writeDateTime(offsets[6], object.indexedScheduledDate);
   writer.writeBool(offsets[7], object.isCompleted);
   writer.writeBool(offsets[8], object.isImportant);
-  writer.writeLong(offsets[9], object.notificationId);
-  writer.writeLong(offsets[10], object.rewardPoints);
-  writer.writeDateTime(offsets[11], object.scheduledDate);
-  writer.writeDateTime(offsets[12], object.scheduledTime);
-  writer.writeString(offsets[13], object.syncGroupCode);
-  writer.writeLong(offsets[14], object.targetReps);
-  writer.writeLong(offsets[15], object.targetSets);
-  writer.writeString(offsets[16], object.title);
-  writer.writeByte(offsets[17], object.type.index);
+  writer.writeBool(offsets[9], object.isNotificationEnabled);
+  writer.writeLong(offsets[10], object.notificationId);
+  writer.writeLong(offsets[11], object.rewardPoints);
+  writer.writeDateTime(offsets[12], object.scheduledDate);
+  writer.writeDateTime(offsets[13], object.scheduledTime);
+  writer.writeString(offsets[14], object.syncGroupCode);
+  writer.writeLong(offsets[15], object.targetReps);
+  writer.writeLong(offsets[16], object.targetSets);
+  writer.writeString(offsets[17], object.title);
+  writer.writeByte(offsets[18], object.type.index);
 }
 
 TaskItem _taskItemDeserialize(
@@ -201,15 +207,16 @@ TaskItem _taskItemDeserialize(
   object.id = id;
   object.isCompleted = reader.readBool(offsets[7]);
   object.isImportant = reader.readBool(offsets[8]);
-  object.notificationId = reader.readLongOrNull(offsets[9]);
-  object.rewardPoints = reader.readLong(offsets[10]);
-  object.scheduledDate = reader.readDateTimeOrNull(offsets[11]);
-  object.scheduledTime = reader.readDateTimeOrNull(offsets[12]);
-  object.syncGroupCode = reader.readStringOrNull(offsets[13]);
-  object.targetReps = reader.readLongOrNull(offsets[14]);
-  object.targetSets = reader.readLongOrNull(offsets[15]);
-  object.title = reader.readString(offsets[16]);
-  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[17])] ??
+  object.isNotificationEnabled = reader.readBool(offsets[9]);
+  object.notificationId = reader.readLongOrNull(offsets[10]);
+  object.rewardPoints = reader.readLong(offsets[11]);
+  object.scheduledDate = reader.readDateTimeOrNull(offsets[12]);
+  object.scheduledTime = reader.readDateTimeOrNull(offsets[13]);
+  object.syncGroupCode = reader.readStringOrNull(offsets[14]);
+  object.targetReps = reader.readLongOrNull(offsets[15]);
+  object.targetSets = reader.readLongOrNull(offsets[16]);
+  object.title = reader.readString(offsets[17]);
+  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[18])] ??
       TaskType.generic;
   return object;
 }
@@ -240,22 +247,24 @@ P _taskItemDeserializeProp<P>(
     case 8:
       return (reader.readBool(offset)) as P;
     case 9:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 10:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 11:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 12:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 13:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 14:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 15:
       return (reader.readLongOrNull(offset)) as P;
     case 16:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 17:
+      return (reader.readString(offset)) as P;
+    case 18:
       return (_TaskItemtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           TaskType.generic) as P;
     default:
@@ -1079,6 +1088,16 @@ extension TaskItemQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isImportant',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      isNotificationEnabledEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isNotificationEnabled',
         value: value,
       ));
     });
@@ -1947,6 +1966,19 @@ extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByIsNotificationEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isNotificationEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy>
+      sortByIsNotificationEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isNotificationEnabled', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByNotificationId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notificationId', Sort.asc);
@@ -2179,6 +2211,19 @@ extension TaskItemQuerySortThenBy
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByIsNotificationEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isNotificationEnabled', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy>
+      thenByIsNotificationEnabledDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isNotificationEnabled', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByNotificationId() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'notificationId', Sort.asc);
@@ -2345,6 +2390,13 @@ extension TaskItemQueryWhereDistinct
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QDistinct>
+      distinctByIsNotificationEnabled() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isNotificationEnabled');
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByNotificationId() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'notificationId');
@@ -2463,6 +2515,13 @@ extension TaskItemQueryProperty
   QueryBuilder<TaskItem, bool, QQueryOperations> isImportantProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isImportant');
+    });
+  }
+
+  QueryBuilder<TaskItem, bool, QQueryOperations>
+      isNotificationEnabledProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isNotificationEnabled');
     });
   }
 

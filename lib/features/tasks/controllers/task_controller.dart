@@ -154,10 +154,19 @@ class TaskController extends ChangeNotifier {
   // ─── Agendamento de notificação/alarme ────────────────────────────
 
   /// Agenda notificação ou alarme para [task] conforme o valor de
-  /// [TaskItem.isImportant]. Persiste o `notificationId`/`alarmId`
-  /// no banco após agendar.
+  /// [TaskItem.isNotificationEnabled] e [TaskItem.isImportant].
+  ///
+  /// Se [isNotificationEnabled] for `false`, cancela qualquer notificação
+  /// ou alarme previamente agendado para esta tarefa.
   Future<void> _scheduleForTask(TaskItem task) async {
-    if (task.scheduledDate == null || task.scheduledTime == null) return;
+    // Se a notificação está desligada ou não há data/horário, cancela
+    // o que já existir e retorna
+    if (!task.isNotificationEnabled ||
+        task.scheduledDate == null ||
+        task.scheduledTime == null) {
+      await _cancelNotificationAndAlarm(task);
+      return;
+    }
 
     if (task.isImportant) {
       await _alarmService.schedule(task);

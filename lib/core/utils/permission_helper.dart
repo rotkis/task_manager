@@ -34,8 +34,11 @@ class PermissionHelper {
   }
 
   /// Abre a tela do sistema para conceder permissão de alarme exato.
-  static Future<void> openExactAlarmSettings() async {
-    await _channel.invokeMethod('openExactAlarmSettings');
+  ///
+  /// Retorna `true` se conseguiu abrir alguma tela, `false` se falhou.
+  static Future<bool> openExactAlarmSettings() async {
+    final result = await _channel.invokeMethod<bool>('openExactAlarmSettings');
+    return result ?? false;
   }
 
   // ─── Otimização de bateria ─────────────────────────────────────────
@@ -51,5 +54,13 @@ class PermissionHelper {
   /// bateria.
   static Future<void> requestIgnoreBatteryOptimization() async {
     await _channel.invokeMethod('requestIgnoreBatteryOptimization');
+  }
+
+  // ─── Timezone ──────────────────────────────────────────────────────
+
+  /// Retorna o fuso horário do dispositivo (ex: "America/Sao_Paulo").
+  static Future<String?> getDeviceTimezone() async {
+    final result = await _channel.invokeMethod<String>('getDeviceTimezone');
+    return result;
   }
 }

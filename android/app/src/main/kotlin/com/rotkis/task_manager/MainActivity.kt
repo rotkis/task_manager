@@ -1,10 +1,12 @@
 package com.rotkis.task_manager
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationManagerCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -26,6 +28,7 @@ class MainActivity : FlutterActivity() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         val granted =
                             NotificationManagerCompat.from(this).areNotificationsEnabled()
+                        Log.d("PermissionHelper", "checkNotificationPermission -> $granted")
                         result.success(granted)
                     } else {
                         result.success(true) // Pré-Android 13, sempre concedida
@@ -34,14 +37,22 @@ class MainActivity : FlutterActivity() {
                 "openAppSettings" -> {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                         data = android.net.Uri.fromParts("package", packageName, null)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
-                    startActivity(intent)
-                    result.success(true)
+                    try {
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PermissionHelper", "openAppSettings failed: $e")
+                        result.success(false)
+                    }
                 }
                 "checkExactAlarmPermission" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val alarmManager = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
-                        result.success(alarmManager.canScheduleExactAlarms())
+                        val granted = alarmManager.canScheduleExactAlarms()
+                        Log.d("PermissionHelper", "checkExactAlarmPermission (API ${Build.VERSION.SDK_INT}) -> $granted")
+                        result.success(granted)
                     } else {
                         result.success(true)
                     }
@@ -50,21 +61,53 @@ class MainActivity : FlutterActivity() {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
                             data = android.net.Uri.fromParts("package", packageName, null)
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
-                        startActivity(intent)
+                        try {
+                            startActivity(intent)
+                            Log.d("PermissionHelper", "openExactAlarmSettings -> ACTION_REQUEST_SCHEDULE_EXACT_ALARM opened")
+                            result.success(true)
+                        } catch (e: ActivityNotFoundException) {
+                            Log.w("PermissionHelper", "openExactAlarmSettings -> ACTION_REQUEST_SCHEDULE_EXACT_ALARM not available, falling back to app settings")
+                            // Fallback: abre configurações do app (o usuário encontra "Alarmes e lembretes" manualmente)
+                            val fallback = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                                data = android.net.Uri.fromParts("package", packageName, null)
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            try {
+                                startActivity(fallback)
+                                result.success(true)
+                            } catch (e2: Exception) {
+                                Log.e("PermissionHelper", "openExactAlarmSettings fallback failed: $e2")
+                                result.success(false)
+                            }
+                        }
+                    } else {
+                        result.success(true)
                     }
-                    result.success(true)
+                }
+                "getDeviceTimezone" -> {
+                    val tz = java.util.TimeZone.getDefault()
+                    result.success(tz.id)
                 }
                 "isBatteryOptimizationIgnored" -> {
                     val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-                    result.success(powerManager.isIgnoringBatteryOptimizations(packageName))
+                    val ignored = powerManager.isIgnoringBatteryOptimizations(packageName)
+                    Log.d("PermissionHelper", "isBatteryOptimizationIgnored -> $ignored")
+                    result.success(ignored)
                 }
                 "requestIgnoreBatteryOptimization" -> {
                     val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
                         data = android.net.Uri.fromParts("package", packageName, null)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     }
-                    startActivity(intent)
-                    result.success(true)
+                    try {
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PermissionHelper", "requestIgnoreBatteryOptimization failed: $e")
+                        result.success(false)
+                    }
                 }
                 else -> result.notImplemented()
             }
