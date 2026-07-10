@@ -68,6 +68,7 @@ class NotificationService {
       priority: Priority.high,
       playSound: true,
       enableVibration: true,
+      fullScreenIntent: true,
     );
     const iosDetails = DarwinNotificationDetails();
     const details = NotificationDetails(
@@ -81,7 +82,7 @@ class NotificationService {
       task.description ?? 'Você tem uma tarefa para fazer',
       tz.TZDateTime.from(scheduledDateTime, tz.local),
       details,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );

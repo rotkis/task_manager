@@ -95,11 +95,11 @@ class TaskCard extends StatelessWidget {
         color: theme.colorScheme.error,
         child: const Icon(Icons.delete, color: Colors.white),
       ),
-      confirmDismiss: (_) async {
+      // Retorna true para permitir a animação de dismiss;
+      // a deleção efetiva ocorre em onDismissed.
+      confirmDismiss: (_) async => true,
+      onDismissed: (_) {
         onDelete?.call();
-        // Retorna false para não remover automaticamente;
-        // o controller gerencia a remoção e mostra SnackBar/undo.
-        return false;
       },
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

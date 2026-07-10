@@ -6,6 +6,7 @@ import 'data/isar/isar_service.dart';
 import 'data/repositories/share_repository.dart';
 import 'features/notifications/alarm_service.dart';
 import 'features/notifications/notification_service.dart';
+import 'features/notifications/widgets/notification_settings_sheet.dart';
 import 'features/calendar/screens/calendar_screen.dart';
 import 'features/share/controllers/share_controller.dart';
 import 'features/share/screens/share_screen.dart';
@@ -117,6 +118,11 @@ class _HomeShellState extends State<HomeShell> {
       appBar: AppBar(
         title: Text(_titles[_index]),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Notificações',
+            onPressed: () => NotificationSettingsSheet.show(context),
+          ),
           IconButton(
             icon: const Icon(Icons.brightness_6_outlined),
             onPressed: widget.onToggleTheme,

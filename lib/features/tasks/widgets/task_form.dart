@@ -149,16 +149,19 @@ class _TaskFormState extends State<TaskForm> {
         task.durationMinutes = null;
         task.durationSeconds = null;
         task.targetReps = null;
+        task.targetSets = null;
       case TaskType.pomodoroStudy:
         task.durationMinutes =
             int.tryParse(_durationCtrl.text) ?? _defaultDuration;
         task.durationSeconds = null;
         task.targetReps = null;
+        task.targetSets = null;
       case TaskType.timedExercise:
         task.durationMinutes = null;
         task.durationSeconds =
             int.tryParse(_durationCtrl.text) ?? _defaultDuration;
         task.targetReps = null;
+        task.targetSets = null;
       case TaskType.repsExercise:
         task.durationMinutes = null;
         task.durationSeconds = null;
@@ -168,15 +171,26 @@ class _TaskFormState extends State<TaskForm> {
             int.tryParse(_setsCtrl.text) ?? AppConstants.defaultSetsTarget;
     }
 
-    if (isEditing) {
-      await context.read<TaskController>().updateTask(task);
-    } else {
-      await context.read<TaskController>().createTask(task);
+    try {
+      if (isEditing) {
+        await context.read<TaskController>().updateTask(task);
+      } else {
+        await context.read<TaskController>().createTask(task);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final theme = Theme.of(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao salvar: ${e.toString()}'),
+          backgroundColor: theme.colorScheme.error,
+        ),
+      );
+      return;
     }
 
-    if (mounted) {
-      Navigator.of(context).pop();
-    }
+    if (!mounted) return;
+    Navigator.of(context).pop();
   }
 
   @override

@@ -34,25 +34,52 @@ class ScheduleList extends StatelessWidget {
     TasksScreen.openForm(context, task: task);
   }
 
-  void _onDelete(BuildContext context, TaskItem task) {
+  Future<void> _onDelete(BuildContext context, TaskItem task) async {
     final controller = context.read<TaskController>();
-    controller.deleteTask(task.id);
-    ScaffoldMessenger.of(context)
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await controller.deleteTask(task.id);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Erro ao remover: $e')),
+      );
+      return;
+    }
+
+    messenger
       ..clearSnackBars()
       ..showSnackBar(
         SnackBar(
           content: Text('"${task.title}" removida'),
           action: SnackBarAction(
             label: 'Desfazer',
-            onPressed: () => controller.undoDelete(),
+            onPressed: () async {
+              try {
+                await controller.undoDelete();
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Erro ao desfazer: $e')),
+                );
+              }
+            },
           ),
         ),
       );
   }
 
-  void _onToggleComplete(BuildContext context, TaskItem task) {
+  Future<void> _onToggleComplete(BuildContext context, TaskItem task) async {
     if (task.isCompleted) return;
-    context.read<TaskController>().completeTask(task.id);
+    try {
+      await context.read<TaskController>().completeTask(task.id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao concluir: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   @override

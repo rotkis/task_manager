@@ -44,12 +44,23 @@ class TasksScreen extends StatelessWidget {
         breakDurationMinutes: task.type == TaskType.pomodoroStudy
             ? AppConstants.defaultPomodoroBreakMinutes
             : 0,
-        onFinish: () {
+        onFinish: () async {
           Navigator.of(ctx).pop();
-          context.read<TaskController>().completeTask(task.id);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Tarefa concluída!')),
-          );
+          try {
+            await context.read<TaskController>().completeTask(task.id);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Tarefa concluída!')),
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erro ao concluir: $e'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
         },
         onCancel: () => Navigator.of(ctx).pop(),
       ),
@@ -63,36 +74,41 @@ class TasksScreen extends StatelessWidget {
       builder: (ctx) => RepCounterWidget(
         targetReps: task.targetReps ?? AppConstants.defaultRepsTarget,
         targetSets: task.targetSets ?? AppConstants.defaultSetsTarget,
-        onComplete: () {
+        onComplete: () async {
           Navigator.of(ctx).pop();
-          context.read<TaskController>().completeTask(task.id);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${task.title} concluída!')),
-          );
+          try {
+            await context.read<TaskController>().completeTask(task.id);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${task.title} concluída!')),
+            );
+          } catch (e) {
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erro ao concluir: $e'),
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+            );
+          }
         },
       ),
     );
   }
 
-  void _onDelete(BuildContext context, TaskItem task) {
-    final controller = context.read<TaskController>();
-    controller.deleteTask(task.id);
-    ScaffoldMessenger.of(context)
-      ..clearSnackBars()
-      ..showSnackBar(
+  Future<void> _onToggleComplete(BuildContext context, TaskItem task) async {
+    if (task.isCompleted) return;
+    try {
+      await context.read<TaskController>().completeTask(task.id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('"${task.title}" removida'),
-          action: SnackBarAction(
-            label: 'Desfazer',
-            onPressed: () => controller.undoDelete(),
-          ),
+          content: Text('Erro ao concluir: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
-  }
-
-  void _onToggleComplete(BuildContext context, TaskItem task) {
-    if (task.isCompleted) return;
-    context.read<TaskController>().completeTask(task.id);
+    }
   }
 
   void _onCardTap(BuildContext context, TaskItem task) {
@@ -170,11 +186,52 @@ class TasksScreen extends StatelessWidget {
   }
 
   Widget _buildCard(BuildContext context, TaskItem task) {
+    final controller = context.read<TaskController>();
+    final messenger = ScaffoldMessenger.of(context);
     return TaskCard(
       task: task,
       onTap: () => _onCardTap(context, task),
       onToggleComplete: () => _onToggleComplete(context, task),
-      onDelete: () => _onDelete(context, task),
+      onDelete: () => _onDelete(controller, messenger, task),
     );
+  }
+
+  Future<void> _onDelete(
+    TaskController controller,
+    ScaffoldMessengerState messenger,
+    TaskItem task,
+  ) async {
+    try {
+      await controller.deleteTask(task.id);
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('Erro ao remover: $e'),
+        ),
+      );
+      return;
+    }
+
+    messenger
+      ..clearSnackBars()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('"${task.title}" removida'),
+          action: SnackBarAction(
+            label: 'Desfazer',
+            onPressed: () async {
+              try {
+                await controller.undoDelete();
+              } catch (e) {
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('Erro ao desfazer: $e'),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+      );
   }
 }

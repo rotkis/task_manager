@@ -166,7 +166,18 @@ class _ExportTab extends StatelessWidget {
                         code != null ? 'Regenerar Código' : 'Gerar Código'),
                     onPressed: controller.selectedIds.isEmpty
                         ? null
-                        : () => controller.generateCode(),
+                        : () async {
+                            try {
+                              await controller.generateCode();
+                            } catch (e) {
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Erro ao gerar código: $e'),
+                                ),
+                              );
+                            }
+                          },
                   ),
                 ),
               ],
@@ -232,10 +243,20 @@ class _ImportTabState extends State<_ImportTab> {
               suffixIcon: IconButton(
                 icon: const Icon(Icons.paste),
                 onPressed: () async {
-                  final data = await Clipboard.getData(Clipboard.kTextPlain);
-                  final text = data?.text;
-                  if (text != null) {
-                    _codeController.text = text;
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    final data = await Clipboard.getData(Clipboard.kTextPlain);
+                    final text = data?.text;
+                    if (text != null) {
+                      _codeController.text = text;
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('Erro ao colar: $e'),
+                      ),
+                    );
                   }
                 },
               ),
@@ -307,7 +328,19 @@ class _ImportTabState extends State<_ImportTab> {
                   child: FilledButton.icon(
                     icon: const Icon(Icons.download),
                     label: const Text('Importar'),
-                    onPressed: () => widget.controller.confirmImport(),
+                    onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      try {
+                        await widget.controller.confirmImport();
+                      } catch (e) {
+                        if (!mounted) return;
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text('Erro ao importar: $e'),
+                          ),
+                        );
+                      }
+                    },
                   ),
                 ),
               ],
