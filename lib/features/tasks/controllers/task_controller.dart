@@ -78,6 +78,11 @@ class TaskController extends ChangeNotifier {
       _allTasks = tasks;
       notifyListeners();
     });
+
+    // Garante instâncias futuras de tarefas recorrentes (fire-and-forget)
+    _taskRepo.ensureUpcomingInstances().catchError((e) {
+      debugPrint('ensureUpcomingInstances error: $e');
+    });
   }
 
   /// Lista completa de todas as tarefas (usada pela tela de compartilhar).

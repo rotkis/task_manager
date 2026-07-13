@@ -45,7 +45,10 @@
     "AGENTS.md",
     "specs/spec.md",
     "specs/plan.md",
-    "specs/tasks.md"
+    "specs/tasks.md",
+    "specs/spec_v2.md",
+    "specs/plan_v2.md",
+    "specs/tasks_v2.md"
   ],
 
   "agent": {

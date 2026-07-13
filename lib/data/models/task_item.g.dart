@@ -72,43 +72,53 @@ const TaskItemSchema = CollectionSchema(
       name: r'notificationId',
       type: IsarType.long,
     ),
-    r'rewardPoints': PropertySchema(
+    r'parentRecurringId': PropertySchema(
       id: 11,
+      name: r'parentRecurringId',
+      type: IsarType.long,
+    ),
+    r'recurrenceRule': PropertySchema(
+      id: 12,
+      name: r'recurrenceRule',
+      type: IsarType.string,
+    ),
+    r'rewardPoints': PropertySchema(
+      id: 13,
       name: r'rewardPoints',
       type: IsarType.long,
     ),
     r'scheduledDate': PropertySchema(
-      id: 12,
+      id: 14,
       name: r'scheduledDate',
       type: IsarType.dateTime,
     ),
     r'scheduledTime': PropertySchema(
-      id: 13,
+      id: 15,
       name: r'scheduledTime',
       type: IsarType.dateTime,
     ),
     r'syncGroupCode': PropertySchema(
-      id: 14,
+      id: 16,
       name: r'syncGroupCode',
       type: IsarType.string,
     ),
     r'targetReps': PropertySchema(
-      id: 15,
+      id: 17,
       name: r'targetReps',
       type: IsarType.long,
     ),
     r'targetSets': PropertySchema(
-      id: 16,
+      id: 18,
       name: r'targetSets',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 17,
+      id: 19,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 18,
+      id: 20,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TaskItemtypeEnumValueMap,
@@ -155,6 +165,12 @@ int _taskItemEstimateSize(
     }
   }
   {
+    final value = object.recurrenceRule;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
     final value = object.syncGroupCode;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -181,14 +197,16 @@ void _taskItemSerialize(
   writer.writeBool(offsets[8], object.isImportant);
   writer.writeBool(offsets[9], object.isNotificationEnabled);
   writer.writeLong(offsets[10], object.notificationId);
-  writer.writeLong(offsets[11], object.rewardPoints);
-  writer.writeDateTime(offsets[12], object.scheduledDate);
-  writer.writeDateTime(offsets[13], object.scheduledTime);
-  writer.writeString(offsets[14], object.syncGroupCode);
-  writer.writeLong(offsets[15], object.targetReps);
-  writer.writeLong(offsets[16], object.targetSets);
-  writer.writeString(offsets[17], object.title);
-  writer.writeByte(offsets[18], object.type.index);
+  writer.writeLong(offsets[11], object.parentRecurringId);
+  writer.writeString(offsets[12], object.recurrenceRule);
+  writer.writeLong(offsets[13], object.rewardPoints);
+  writer.writeDateTime(offsets[14], object.scheduledDate);
+  writer.writeDateTime(offsets[15], object.scheduledTime);
+  writer.writeString(offsets[16], object.syncGroupCode);
+  writer.writeLong(offsets[17], object.targetReps);
+  writer.writeLong(offsets[18], object.targetSets);
+  writer.writeString(offsets[19], object.title);
+  writer.writeByte(offsets[20], object.type.index);
 }
 
 TaskItem _taskItemDeserialize(
@@ -209,14 +227,16 @@ TaskItem _taskItemDeserialize(
   object.isImportant = reader.readBool(offsets[8]);
   object.isNotificationEnabled = reader.readBool(offsets[9]);
   object.notificationId = reader.readLongOrNull(offsets[10]);
-  object.rewardPoints = reader.readLong(offsets[11]);
-  object.scheduledDate = reader.readDateTimeOrNull(offsets[12]);
-  object.scheduledTime = reader.readDateTimeOrNull(offsets[13]);
-  object.syncGroupCode = reader.readStringOrNull(offsets[14]);
-  object.targetReps = reader.readLongOrNull(offsets[15]);
-  object.targetSets = reader.readLongOrNull(offsets[16]);
-  object.title = reader.readString(offsets[17]);
-  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[18])] ??
+  object.parentRecurringId = reader.readLongOrNull(offsets[11]);
+  object.recurrenceRule = reader.readStringOrNull(offsets[12]);
+  object.rewardPoints = reader.readLong(offsets[13]);
+  object.scheduledDate = reader.readDateTimeOrNull(offsets[14]);
+  object.scheduledTime = reader.readDateTimeOrNull(offsets[15]);
+  object.syncGroupCode = reader.readStringOrNull(offsets[16]);
+  object.targetReps = reader.readLongOrNull(offsets[17]);
+  object.targetSets = reader.readLongOrNull(offsets[18]);
+  object.title = reader.readString(offsets[19]);
+  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[20])] ??
       TaskType.generic;
   return object;
 }
@@ -251,20 +271,24 @@ P _taskItemDeserializeProp<P>(
     case 10:
       return (reader.readLongOrNull(offset)) as P;
     case 11:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 12:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 13:
-      return (reader.readDateTimeOrNull(offset)) as P;
-    case 14:
       return (reader.readStringOrNull(offset)) as P;
+    case 13:
+      return (reader.readLong(offset)) as P;
+    case 14:
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 15:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 16:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 17:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 18:
+      return (reader.readLongOrNull(offset)) as P;
+    case 19:
+      return (reader.readString(offset)) as P;
+    case 20:
       return (_TaskItemtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           TaskType.generic) as P;
     default:
@@ -1176,6 +1200,233 @@ extension TaskItemQueryFilter
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      parentRecurringIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'parentRecurringId',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      parentRecurringIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'parentRecurringId',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      parentRecurringIdEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'parentRecurringId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      parentRecurringIdGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'parentRecurringId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      parentRecurringIdLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'parentRecurringId',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      parentRecurringIdBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'parentRecurringId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'recurrenceRule',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'recurrenceRule',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> recurrenceRuleEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'recurrenceRule',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'recurrenceRule',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'recurrenceRule',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> recurrenceRuleBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'recurrenceRule',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'recurrenceRule',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'recurrenceRule',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'recurrenceRule',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> recurrenceRuleMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'recurrenceRule',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'recurrenceRule',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      recurrenceRuleIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'recurrenceRule',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> rewardPointsEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -1991,6 +2242,30 @@ extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByParentRecurringId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentRecurringId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByParentRecurringIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentRecurringId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByRecurrenceRule() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recurrenceRule', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByRecurrenceRuleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recurrenceRule', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByRewardPoints() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rewardPoints', Sort.asc);
@@ -2236,6 +2511,30 @@ extension TaskItemQuerySortThenBy
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByParentRecurringId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentRecurringId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByParentRecurringIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'parentRecurringId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByRecurrenceRule() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recurrenceRule', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByRecurrenceRuleDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'recurrenceRule', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByRewardPoints() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rewardPoints', Sort.asc);
@@ -2403,6 +2702,20 @@ extension TaskItemQueryWhereDistinct
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByParentRecurringId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'parentRecurringId');
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByRecurrenceRule(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'recurrenceRule',
+          caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByRewardPoints() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'rewardPoints');
@@ -2528,6 +2841,18 @@ extension TaskItemQueryProperty
   QueryBuilder<TaskItem, int?, QQueryOperations> notificationIdProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'notificationId');
+    });
+  }
+
+  QueryBuilder<TaskItem, int?, QQueryOperations> parentRecurringIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'parentRecurringId');
+    });
+  }
+
+  QueryBuilder<TaskItem, String?, QQueryOperations> recurrenceRuleProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'recurrenceRule');
     });
   }
 

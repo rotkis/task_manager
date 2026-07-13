@@ -6,7 +6,141 @@ import 'package:intl/intl.dart';
 import '../../../data/models/task_item.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_helpers.dart';
+import '../../../core/utils/recurrence_parser.dart';
 import '../controllers/task_controller.dart';
+
+/// Seletor de regra de recorrência para o formulário de tarefa.
+class _RecurrenceSelector extends StatelessWidget {
+  final RecurrenceType recurrenceType;
+  final Set<int> weekDays;
+  final int interval;
+  final ValueChanged<RecurrenceType> onTypeChanged;
+  final ValueChanged<Set<int>> onWeekDaysChanged;
+  final ValueChanged<int> onIntervalChanged;
+
+  const _RecurrenceSelector({
+    required this.recurrenceType,
+    required this.weekDays,
+    required this.interval,
+    required this.onTypeChanged,
+    required this.onWeekDaysChanged,
+    required this.onIntervalChanged,
+  });
+
+  static const _weekDayLabels = {
+    1: 'Seg',
+    2: 'Ter',
+    3: 'Qua',
+    4: 'Qui',
+    5: 'Sex',
+    6: 'Sáb',
+    7: 'Dom',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Repetir',
+          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 4),
+        DropdownMenu<RecurrenceType>(
+          initialSelection: recurrenceType,
+          label: const Text('Recorrência'),
+          onSelected: (v) {
+            if (v != null) onTypeChanged(v);
+          },
+          dropdownMenuEntries: const [
+            DropdownMenuEntry(value: RecurrenceType.none, label: 'Não repete'),
+            DropdownMenuEntry(value: RecurrenceType.daily, label: 'Diária'),
+            DropdownMenuEntry(value: RecurrenceType.weekly, label: 'Semanal'),
+            DropdownMenuEntry(
+                value: RecurrenceType.everyNDays, label: 'A cada N dias'),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // Se Semanal: mostra os dias da semana
+        if (recurrenceType == RecurrenceType.weekly) ...[
+          const Text('Dias da semana:', style: TextStyle(fontSize: 13)),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 4,
+            children: _weekDayLabels.entries.map((e) {
+              final selected = weekDays.contains(e.key);
+              return FilterChip(
+                label: Text(e.value, style: const TextStyle(fontSize: 12)),
+                selected: selected,
+                onSelected: (v) {
+                  final updated = Set<int>.from(weekDays);
+                  if (v) {
+                    updated.add(e.key);
+                  } else {
+                    updated.remove(e.key);
+                  }
+                  onWeekDaysChanged(updated);
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 8),
+        ],
+
+        // Se "a cada N dias": campo de intervalo
+        if (recurrenceType == RecurrenceType.everyNDays) ...[
+          TextFormField(
+            initialValue: interval.toString(),
+            decoration: const InputDecoration(
+              labelText: 'A cada quantos dias?',
+              helperText: 'Ex: 3 = a cada 3 dias',
+            ),
+            keyboardType: TextInputType.number,
+            onChanged: (v) {
+              final n = int.tryParse(v);
+              if (n != null && n >= 1) onIntervalChanged(n);
+            },
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Ações possíveis ao editar uma instância de tarefa recorrente.
+enum _RecurringEditAction { thisOnly, thisAndFuture }
+
+/// Diálogo que pergunta se a edição deve afetar só esta ocorrência
+/// ou esta e as futuras.
+class _RecurringEditDialog extends StatelessWidget {
+  const _RecurringEditDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Editar tarefa recorrente'),
+      content: const Text(
+        'Você está editando uma ocorrência de uma tarefa que se repete. '
+        'Deseja aplicar esta alteração apenas a esta ocorrência ou a '
+        'esta e às futuras?',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () =>
+              Navigator.pop(context, _RecurringEditAction.thisOnly),
+          child: const Text('Só esta'),
+        ),
+        FilledButton(
+          onPressed: () =>
+              Navigator.pop(context, _RecurringEditAction.thisAndFuture),
+          child: const Text('Esta e as futuras'),
+        ),
+      ],
+    );
+  }
+}
 
 /// Modal / tela de criação ou edição de tarefa.
 ///
@@ -42,6 +176,24 @@ class _TaskFormState extends State<TaskForm> {
   bool _isNotificationEnabled = true;
   bool _isImportant = false;
 
+  // ─── Recorrência ────────────────────────────────────────────────────
+
+  /// Tipo de recorrência selecionado.
+  RecurrenceType _recurrenceType = RecurrenceType.none;
+
+  /// Dias da semana selecionados (1=segunda … 7=domingo), usado
+  /// apenas quando [_recurrenceType] é [RecurrenceType.weekly].
+  final Set<int> _recurrenceWeekDays = {};
+
+  /// Intervalo em dias para recorrência customizada.
+  int _recurrenceInterval = 3;
+
+  /// Se estamos editando uma instância de tarefa recorrente (possui
+  /// [parentRecurringId]), precisamos perguntar ao salvar se a alteração
+  /// deve afetar "só esta" ou "esta e as futuras".
+  bool get _isEditingInstance =>
+      widget.task != null && widget.task!.parentRecurringId != null;
+
   @override
   void initState() {
     super.initState();
@@ -76,6 +228,14 @@ class _TaskFormState extends State<TaskForm> {
       _scheduledTime = t.scheduledTime;
       _isNotificationEnabled = t.isNotificationEnabled;
       _isImportant = t.isImportant;
+
+      // Inicializa recorrência a partir da tarefa-modelo (se for modelo)
+      if (t.parentRecurringId == null && t.recurrenceRule != null) {
+        final rule = parseRecurrenceRule(t.recurrenceRule);
+        _recurrenceType = rule.type;
+        _recurrenceWeekDays.addAll(rule.weekDays);
+        _recurrenceInterval = rule.intervalDays;
+      }
     } else if (_scheduledDate != null && _scheduledTime != null) {
       // Nova tarefa com horário: notificação ligada por padrão
       _isNotificationEnabled = true;
@@ -90,6 +250,72 @@ class _TaskFormState extends State<TaskForm> {
         return AppConstants.defaultPomodoroFocusMinutes;
       default:
         return 1;
+    }
+  }
+
+  /// Aplica a regra de recorrência selecionada nos campos da [task].
+  /// Usado para tarefas novas ou edição de modelo/avulsa.
+  void _applyRecurrenceToTask(TaskItem task) {
+    if (_recurrenceType == RecurrenceType.none) {
+      task.recurrenceRule = null;
+      return;
+    }
+    final rule = RecurrenceRule(
+      type: _recurrenceType,
+      weekDays: _recurrenceWeekDays.toList()..sort(),
+      intervalDays: _recurrenceInterval,
+    );
+    task.recurrenceRule = serializeRecurrenceRule(rule);
+  }
+
+  /// Ao editar uma instância de tarefa recorrente, pergunta ao usuário
+  /// se deseja aplicar a alteração "só nesta" ou "nesta e nas futuras".
+  Future<void> _saveRecurringInstance(TaskItem task) async {
+    final action = await showDialog<_RecurringEditAction>(
+      context: context,
+      builder: (ctx) => _RecurringEditDialog(),
+    );
+    if (action == null || !mounted) return;
+
+    final controller = context.read<TaskController>();
+
+    if (action == _RecurringEditAction.thisOnly) {
+      // Salva apenas esta instância (já populada com os dados do form)
+      await controller.updateTask(task);
+    } else {
+      // "Esta e as futuras": primeiro salva a instância, depois
+      // atualiza a tarefa-modelo com a regra/título/dados novos,
+      // e depois regenera as instâncias futuras a partir do modelo.
+      final repo = controller.taskRepo;
+
+      // 1. Salva os dados editados na instância atual
+      await controller.updateTask(task);
+
+      // 2. Carrega a tarefa-modelo
+      final model = await repo.getById(task.parentRecurringId!);
+      if (model != null) {
+        // Aplica os novos dados ao modelo
+        model.title = task.title;
+        model.description = task.description;
+        model.type = task.type;
+        model.rewardPoints = task.rewardPoints;
+        model.durationMinutes = task.durationMinutes;
+        model.durationSeconds = task.durationSeconds;
+        model.targetReps = task.targetReps;
+        model.targetSets = task.targetSets;
+        model.scheduledDate = task.scheduledDate;
+        model.scheduledTime = task.scheduledTime;
+        model.isNotificationEnabled = task.isNotificationEnabled;
+        model.isImportant = task.isImportant;
+
+        // Aplica a regra de recorrência editada
+        _applyRecurrenceToTask(model);
+
+        await controller.updateTask(model);
+
+        // 3. Regenera instâncias futuras
+        await repo.ensureUpcomingInstances();
+      }
     }
   }
 
@@ -180,22 +406,31 @@ class _TaskFormState extends State<TaskForm> {
             int.tryParse(_setsCtrl.text) ?? AppConstants.defaultSetsTarget;
     }
 
-    try {
-      if (isEditing) {
-        await context.read<TaskController>().updateTask(task);
-      } else {
-        await context.read<TaskController>().createTask(task);
+    // ─── Lida com recorrência ──────────────────────────────────────
+    if (_isEditingInstance) {
+      // Editando uma instância de tarefa recorrente
+      await _saveRecurringInstance(task);
+    } else {
+      // Nova tarefa ou edição de modelo / avulsa
+      _applyRecurrenceToTask(task);
+
+      try {
+        if (isEditing) {
+          await context.read<TaskController>().updateTask(task);
+        } else {
+          await context.read<TaskController>().createTask(task);
+        }
+      } catch (e) {
+        if (!mounted) return;
+        final theme = Theme.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao salvar: ${e.toString()}'),
+            backgroundColor: theme.colorScheme.error,
+          ),
+        );
+        return;
       }
-    } catch (e) {
-      if (!mounted) return;
-      final theme = Theme.of(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao salvar: ${e.toString()}'),
-          backgroundColor: theme.colorScheme.error,
-        ),
-      );
-      return;
     }
 
     if (!mounted) return;
@@ -408,6 +643,32 @@ class _TaskFormState extends State<TaskForm> {
                   ? (v) => setState(() => _isImportant = v)
                   : null,
             ),
+            const Divider(height: 24),
+
+            // ─── Recorrência ──────────────────────────────────
+            // Só permite configurar recorrência se NÃO estamos editando
+            // uma instância (senão a regra é lida da tarefa-modelo).
+            if (!_isEditingInstance) ...[
+              _RecurrenceSelector(
+                recurrenceType: _recurrenceType,
+                weekDays: _recurrenceWeekDays,
+                interval: _recurrenceInterval,
+                onTypeChanged: (t) => setState(() => _recurrenceType = t),
+                onWeekDaysChanged: (days) => setState(() => _recurrenceWeekDays
+                  ..clear()
+                  ..addAll(days)),
+                onIntervalChanged: (v) =>
+                    setState(() => _recurrenceInterval = v),
+              ),
+            ] else ...[
+              // Mostra um badge informativo para instâncias
+              ListTile(
+                leading: const Icon(Icons.repeat),
+                title: const Text('Tarefa recorrente'),
+                subtitle:
+                    const Text('Editar esta ocorrência não afeta as outras'),
+              ),
+            ],
           ],
         ),
       ),

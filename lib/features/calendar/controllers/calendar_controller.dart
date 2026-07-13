@@ -91,6 +91,28 @@ class CalendarController extends ChangeNotifier {
     }
   }
 
+  /// Injeta dados estáticos diretamente no mapa (usado em testes golden
+  /// para evitar dependência de streams do Isar).
+  ///
+  /// Chame com uma lista de [TaskItem] que já tenham `scheduledDate`
+  /// preenchido. O mapa será reconstruído sem se inscrever no repositório.
+  void setTasksDirectly(List<TaskItem> tasks) {
+    _tasksByDay.clear();
+    for (final task in tasks) {
+      if (task.scheduledDate == null) continue;
+      final day = DateTime(
+        task.scheduledDate!.year,
+        task.scheduledDate!.month,
+        task.scheduledDate!.day,
+      );
+      _tasksByDay.putIfAbsent(day, () => []);
+      if (!_tasksByDay[day]!.any((t) => t.id == task.id)) {
+        _tasksByDay[day]!.add(task);
+      }
+    }
+    notifyListeners();
+  }
+
   // ─── Ações do calendário ────────────────────────────────────────────
 
   /// Define o dia selecionado e notifica ouvintes.

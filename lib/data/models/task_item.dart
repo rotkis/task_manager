@@ -54,9 +54,20 @@ class TaskItem {
   int? alarmId;
 
   // Sincronização entre usuários: tarefas compartilhadas via código
-  // carregam o mesmo syncGroupCode, mas cada usuário pode editar
+  // carregam o mesmo syncGroupCode, but cada usuário pode editar
   // seu próprio horário/dia depois de importar.
   String? syncGroupCode;
+
+  // ─── Recorrência (Módulo 6) ────────────────────────────────────────
+
+  /// Regra de recorrência, ex: "daily", "weekly:MON,WED,FRI", "every:3".
+  /// Se nulo, a tarefa não se repete.
+  String? recurrenceRule;
+
+  /// Se esta tarefa é uma **instância** gerada de uma tarefa-modelo
+  /// recorrente, [parentRecurringId] aponta para o id da tarefa-modelo.
+  /// A própria tarefa-modelo tem este campo como null.
+  int? parentRecurringId;
 
   DateTime createdAt = DateTime.now();
 
