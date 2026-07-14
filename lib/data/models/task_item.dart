@@ -55,11 +55,6 @@ class TaskItem {
   /// ID do alarme (pacote `alarm`) para tarefas importantes.
   int? alarmId;
 
-  // Sincronização entre usuários: tarefas compartilhadas via código
-  // carregam o mesmo syncGroupCode, but cada usuário pode editar
-  // seu próprio horário/dia depois de importar.
-  String? syncGroupCode;
-
   // ─── Recorrência (Módulo 6) ────────────────────────────────────────
 
   /// Regra de recorrência, ex: "daily", "weekly:MON,WED,FRI", "every:3".

@@ -107,33 +107,28 @@ const TaskItemSchema = CollectionSchema(
       name: r'scheduledTime',
       type: IsarType.dateTime,
     ),
-    r'syncGroupCode': PropertySchema(
-      id: 18,
-      name: r'syncGroupCode',
-      type: IsarType.string,
-    ),
     r'tags': PropertySchema(
-      id: 19,
+      id: 18,
       name: r'tags',
       type: IsarType.stringList,
     ),
     r'targetReps': PropertySchema(
-      id: 20,
+      id: 19,
       name: r'targetReps',
       type: IsarType.long,
     ),
     r'targetSets': PropertySchema(
-      id: 21,
+      id: 20,
       name: r'targetSets',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 22,
+      id: 21,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 23,
+      id: 22,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TaskItemtypeEnumValueMap,
@@ -185,12 +180,6 @@ int _taskItemEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
-  {
-    final value = object.syncGroupCode;
-    if (value != null) {
-      bytesCount += 3 + value.length * 3;
-    }
-  }
   bytesCount += 3 + object.tags.length * 3;
   {
     for (var i = 0; i < object.tags.length; i++) {
@@ -226,12 +215,11 @@ void _taskItemSerialize(
   writer.writeLong(offsets[15], object.rewardPoints);
   writer.writeDateTime(offsets[16], object.scheduledDate);
   writer.writeDateTime(offsets[17], object.scheduledTime);
-  writer.writeString(offsets[18], object.syncGroupCode);
-  writer.writeStringList(offsets[19], object.tags);
-  writer.writeLong(offsets[20], object.targetReps);
-  writer.writeLong(offsets[21], object.targetSets);
-  writer.writeString(offsets[22], object.title);
-  writer.writeByte(offsets[23], object.type.index);
+  writer.writeStringList(offsets[18], object.tags);
+  writer.writeLong(offsets[19], object.targetReps);
+  writer.writeLong(offsets[20], object.targetSets);
+  writer.writeString(offsets[21], object.title);
+  writer.writeByte(offsets[22], object.type.index);
 }
 
 TaskItem _taskItemDeserialize(
@@ -258,12 +246,11 @@ TaskItem _taskItemDeserialize(
   object.rewardPoints = reader.readLong(offsets[15]);
   object.scheduledDate = reader.readDateTimeOrNull(offsets[16]);
   object.scheduledTime = reader.readDateTimeOrNull(offsets[17]);
-  object.syncGroupCode = reader.readStringOrNull(offsets[18]);
-  object.tags = reader.readStringList(offsets[19]) ?? [];
-  object.targetReps = reader.readLongOrNull(offsets[20]);
-  object.targetSets = reader.readLongOrNull(offsets[21]);
-  object.title = reader.readString(offsets[22]);
-  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[23])] ??
+  object.tags = reader.readStringList(offsets[18]) ?? [];
+  object.targetReps = reader.readLongOrNull(offsets[19]);
+  object.targetSets = reader.readLongOrNull(offsets[20]);
+  object.title = reader.readString(offsets[21]);
+  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[22])] ??
       TaskType.generic;
   return object;
 }
@@ -312,16 +299,14 @@ P _taskItemDeserializeProp<P>(
     case 17:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 18:
-      return (reader.readStringOrNull(offset)) as P;
-    case 19:
       return (reader.readStringList(offset) ?? []) as P;
+    case 19:
+      return (reader.readLongOrNull(offset)) as P;
     case 20:
       return (reader.readLongOrNull(offset)) as P;
     case 21:
-      return (reader.readLongOrNull(offset)) as P;
-    case 22:
       return (reader.readString(offset)) as P;
-    case 23:
+    case 22:
       return (_TaskItemtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           TaskType.generic) as P;
     default:
@@ -1722,158 +1707,6 @@ extension TaskItemQueryFilter
     });
   }
 
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
-      syncGroupCodeIsNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'syncGroupCode',
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
-      syncGroupCodeIsNotNull() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'syncGroupCode',
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> syncGroupCodeEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'syncGroupCode',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
-      syncGroupCodeGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'syncGroupCode',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> syncGroupCodeLessThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'syncGroupCode',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> syncGroupCodeBetween(
-    String? lower,
-    String? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'syncGroupCode',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
-      syncGroupCodeStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'syncGroupCode',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> syncGroupCodeEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'syncGroupCode',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> syncGroupCodeContains(
-      String value,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'syncGroupCode',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> syncGroupCodeMatches(
-      String pattern,
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'syncGroupCode',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
-      syncGroupCodeIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'syncGroupCode',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
-      syncGroupCodeIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'syncGroupCode',
-        value: '',
-      ));
-    });
-  }
-
   QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> tagsElementEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -2639,18 +2472,6 @@ extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
     });
   }
 
-  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortBySyncGroupCode() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'syncGroupCode', Sort.asc);
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortBySyncGroupCodeDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'syncGroupCode', Sort.desc);
-    });
-  }
-
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByTargetReps() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetReps', Sort.asc);
@@ -2932,18 +2753,6 @@ extension TaskItemQuerySortThenBy
     });
   }
 
-  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenBySyncGroupCode() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'syncGroupCode', Sort.asc);
-    });
-  }
-
-  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenBySyncGroupCodeDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'syncGroupCode', Sort.desc);
-    });
-  }
-
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByTargetReps() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'targetReps', Sort.asc);
@@ -3107,14 +2916,6 @@ extension TaskItemQueryWhereDistinct
     });
   }
 
-  QueryBuilder<TaskItem, TaskItem, QDistinct> distinctBySyncGroupCode(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'syncGroupCode',
-          caseSensitive: caseSensitive);
-    });
-  }
-
   QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByTags() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'tags');
@@ -3262,12 +3063,6 @@ extension TaskItemQueryProperty
   QueryBuilder<TaskItem, DateTime?, QQueryOperations> scheduledTimeProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'scheduledTime');
-    });
-  }
-
-  QueryBuilder<TaskItem, String?, QQueryOperations> syncGroupCodeProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'syncGroupCode');
     });
   }
 

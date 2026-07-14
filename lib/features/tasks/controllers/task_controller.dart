@@ -272,6 +272,17 @@ class TaskController extends ChangeNotifier {
     await _scheduleForTask(task);
   }
 
+  /// Agenda notificação/alarme para uma lista de tarefas importadas.
+  ///
+  /// Usado após importação de backup (Módulo 9) ou compartilhamento
+  /// (Módulo 5) para garantir que tarefas com data/horário agendados
+  /// tenham notificação ativa sem o usuário precisar editá-las manualmente.
+  Future<void> scheduleNotificationsForTasks(List<TaskItem> tasks) async {
+    for (final task in tasks) {
+      await _scheduleForTask(task);
+    }
+  }
+
   // ─── Agendamento de notificação/alarme ────────────────────────────
 
   /// Agenda notificação ou alarme para [task] conforme o valor de
