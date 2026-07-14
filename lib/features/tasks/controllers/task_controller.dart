@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 
 import '../../../data/models/task_item.dart';
+import '../../../data/models/sub_task_item.dart';
 import '../../../data/repositories/task_repository.dart';
 import '../../../data/repositories/progress_repository.dart';
 import '../../../core/utils/date_helpers.dart';
@@ -37,6 +39,38 @@ class TaskController extends ChangeNotifier {
   TaskItem? _lastDeletedTask;
   bool _disposed = false;
 
+  /// Cache de subtarefas por id da tarefa-pai.
+  /// Preenchido sempre que [_todayTasks] ou [_allTasks] é atualizado
+  /// (para tarefas de dias futuros no calendário).
+  final Map<int, List<SubTaskItem>> _subtaskCache = {};
+
+  /// Subtarefas para uma tarefa específica.
+  ///
+  /// Se a tarefa ainda não está no cache (ex: dia futuro no calendário),
+  /// dispara uma busca assíncrona e retorna lista vazia temporariamente.
+  /// Quando a busca completar, o cache é atualizado e a UI reconstroi.
+  /// Em ambiente de teste ([FLUTTER_TEST]), não dispara a busca para
+  /// evitar conflito com FakeAsync (Isar FFI nunca completa).
+  List<SubTaskItem> subtasksForTask(int taskId) {
+    if (_subtaskCache.containsKey(taskId)) return _subtaskCache[taskId]!;
+    if (!_inTest) _lazyLoadSubtasks(taskId);
+    return [];
+  }
+
+  /// Busca subtarefas para [taskId] que não estava em cache e atualiza
+  /// o cache quando a consulta retorna.
+  void _lazyLoadSubtasks(int taskId) {
+    _taskRepo.getSubtasks(taskId).then((list) {
+      if (_disposed) return;
+      _subtaskCache[taskId] = list;
+      notifyListeners();
+    });
+  }
+
+  static bool get _inTest =>
+      Platform.environment.containsKey('FLUTTER_TEST') ||
+      Platform.environment.containsKey('APP_TEST');
+
   TaskController({
     TaskRepository? taskRepo,
     ProgressRepository? progressRepo,
@@ -69,7 +103,9 @@ class TaskController extends ChangeNotifier {
     _tasksSub = _taskRepo.watchByDate(DateHelpers.today()).listen((tasks) {
       if (_disposed) return;
       _todayTasks = tasks;
-      notifyListeners();
+      // A UI só será notificada depois que o cache de subtarefas
+      // estiver carregado (dentro de [_refreshSubtaskCache]).
+      _refreshSubtaskCache();
     });
 
     _allTasksSub?.cancel();
@@ -83,6 +119,31 @@ class TaskController extends ChangeNotifier {
     _taskRepo.ensureUpcomingInstances().catchError((e) {
       debugPrint('ensureUpcomingInstances error: $e');
     });
+  }
+
+  /// Atualiza o cache de subtarefas para as tarefas do dia.
+  /// Só chama [notifyListeners] depois que o cache está pronto, para
+  /// evitar renderizar a lista com "Passos: 0/0" antes dos dados reais.
+  void _refreshSubtaskCache() {
+    _taskRepo
+        .getSubtasksForTasks(_todayTasks.map((t) => t.id).toList())
+        .then((cache) {
+      if (_disposed) return;
+      _subtaskCache
+        ..clear()
+        ..addAll(cache);
+      notifyListeners();
+    });
+  }
+
+  /// Força a atualização do cache de subtarefas para uma tarefa
+  /// específica. Usado pelo [TaskForm] após persistir subtarefas
+  /// pendentes na criação da tarefa.
+  Future<void> refreshSubtaskCacheForTask(int taskId) async {
+    final list = await _taskRepo.getSubtasks(taskId);
+    if (_disposed) return;
+    _subtaskCache[taskId] = list;
+    notifyListeners();
   }
 
   /// Lista completa de todas as tarefas (usada pela tela de compartilhar).
@@ -100,22 +161,58 @@ class TaskController extends ChangeNotifier {
   // ─── CRUD ──────────────────────────────────────────────────────────
 
   /// Cria uma nova tarefa, persiste no banco e agenda notificação/alarme.
-  Future<void> createTask(TaskItem task) async {
+  ///
+  /// Se [subtasks] for fornecido, persiste as subtarefas ANTES de gerar
+  /// instâncias recorrentes, para que [ensureUpcomingInstances] possa
+  /// copiá-las para cada instância gerada.
+  ///
+  /// Se a tarefa for um modelo recorrente ([recurrenceRule] preenchido),
+  /// já gera as instâncias futuras.
+  Future<void> createTask(TaskItem task, {List<SubTaskItem>? subtasks}) async {
     await _taskRepo.create(task);
     await _scheduleForTask(task);
+
+    // Persiste subtarefas antes de gerar instâncias recorrentes, para
+    // que ensureUpcomingInstances copie as subtarefas do modelo para
+    // cada instância.
+    if (subtasks != null && subtasks.isNotEmpty) {
+      for (final sub in subtasks) {
+        sub.parentTaskId = task.id;
+        await _taskRepo.addSubtask(sub);
+      }
+    }
+
+    if (task.recurrenceRule != null && task.recurrenceRule!.isNotEmpty) {
+      await _taskRepo.ensureUpcomingInstances();
+    }
   }
 
   /// Atualiza uma tarefa existente.
   ///
   /// Cancela a notificação/alarme antigo antes de atualizar e agenda o
-  /// novo com os dados atualizados.
+  /// novo com os dados atualizados. Se a tarefa for um modelo recorrente,
+  /// regenera as instâncias futuras.
+  ///
+  /// Se a [scheduledDate] mudou para uma data **posterior** à anterior,
+  /// incrementa [postponeCount] (nudge de adiamento repetido, Módulo 8).
   Future<void> updateTask(TaskItem task) async {
     final oldTask = await _taskRepo.getById(task.id);
     if (oldTask != null) {
       await _cancelNotificationAndAlarm(oldTask);
+      // Verifica se a data foi empurrada pra frente
+      if (oldTask.scheduledDate != null && task.scheduledDate != null) {
+        final oldDate = DateHelpers.normalizeToDay(oldTask.scheduledDate!);
+        final newDate = DateHelpers.normalizeToDay(task.scheduledDate!);
+        if (newDate.isAfter(oldDate)) {
+          task.postponeCount += 1;
+        }
+      }
     }
     await _taskRepo.update(task);
     await _scheduleForTask(task);
+    if (task.recurrenceRule != null && task.recurrenceRule!.isNotEmpty) {
+      await _taskRepo.ensureUpcomingInstances();
+    }
   }
 
   /// Remove uma tarefa pelo [id]. Cancela notificação/alarme antes de
@@ -144,16 +241,35 @@ class TaskController extends ChangeNotifier {
   }
 
   /// Marca a tarefa como concluída, registra timestamp, soma pontos no
-  /// [ProgressRepository] e cancela notificação/alarme pendente.
+  /// [ProgressRepository], zera [postponeCount] e cancela notificação/alarme
+  /// pendente.
   Future<void> completeTask(int id) async {
     final task = await _taskRepo.getById(id);
     if (task == null || task.isCompleted) return;
 
     task.isCompleted = true;
     task.completedAt = DateTime.now();
+    task.postponeCount = 0; // reset ao completar
     await _taskRepo.update(task);
     await _progressRepo.incrementToday(task.rewardPoints);
     await _cancelNotificationAndAlarm(task);
+  }
+
+  /// Reverte a conclusão de uma tarefa: marca como pendente, limpa o
+  /// timestamp, subtrai os pontos do [ProgressRepository] do dia,
+  /// zera [postponeCount] e re-agenda a notificação/alarme (se houver
+  /// data/horário).
+  Future<void> uncompleteTask(int id) async {
+    final task = await _taskRepo.getById(id);
+    if (task == null || !task.isCompleted) return;
+
+    task.isCompleted = false;
+    task.completedAt = null;
+    task.postponeCount = 0; // reset ao desconcluir
+    await _taskRepo.update(task);
+    await _progressRepo.decrementToday(task.rewardPoints);
+    // Re-agenda notificação/alarme já que a tarefa voltou a ficar pendente
+    await _scheduleForTask(task);
   }
 
   // ─── Agendamento de notificação/alarme ────────────────────────────

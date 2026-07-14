@@ -13,6 +13,7 @@ import '../../tasks/widgets/task_card.dart';
 /// - Tap → abre o [TaskForm] em modo edição (reaproveita Módulo 1).
 /// - Swipe → deleta com undo.
 /// - Checkbox/toggle → conclui a tarefa.
+/// - Subtarefas: exibe progresso e checkboxes interativos com toggle.
 class ScheduleList extends StatelessWidget {
   /// Tarefas a exibir (já filtradas e ordenadas para o dia).
   final List<TaskItem> tasks;
@@ -68,14 +69,36 @@ class ScheduleList extends StatelessWidget {
   }
 
   Future<void> _onToggleComplete(BuildContext context, TaskItem task) async {
-    if (task.isCompleted) return;
+    final controller = context.read<TaskController>();
     try {
-      await context.read<TaskController>().completeTask(task.id);
+      if (task.isCompleted) {
+        await controller.uncompleteTask(task.id);
+      } else {
+        await controller.completeTask(task.id);
+      }
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao concluir: $e'),
+          content: Text('Erro ao alternar: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
+  }
+
+  Future<void> _onToggleSubtask(
+      BuildContext context, TaskItem task, int subtaskId) async {
+    final controller = context.read<TaskController>();
+    try {
+      await controller.taskRepo.toggleSubtask(subtaskId);
+      if (!context.mounted) return;
+      await controller.refreshSubtaskCacheForTask(task.id);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao alternar subtarefa: $e'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -84,6 +107,9 @@ class ScheduleList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Observa mudanças no TaskController para subtarefas e conclusões
+    final taskController = context.watch<TaskController>();
+
     if (tasks.isEmpty) {
       if (showEmptyHeader) {
         return Center(
@@ -120,12 +146,18 @@ class ScheduleList extends StatelessWidget {
                 ),
           ),
         ),
-        ...tasks.map((task) => TaskCard(
-              task: task,
-              onTap: () => _openEdit(context, task),
-              onToggleComplete: () => _onToggleComplete(context, task),
-              onDelete: () => _onDelete(context, task),
-            )),
+        ...tasks.map((task) {
+          final subtasks = taskController.subtasksForTask(task.id);
+          return TaskCard(
+            task: task,
+            subtasks: subtasks.isEmpty ? null : subtasks,
+            onToggleSubtask: (subtaskId) =>
+                _onToggleSubtask(context, task, subtaskId),
+            onTap: () => _openEdit(context, task),
+            onToggleComplete: () => _onToggleComplete(context, task),
+            onDelete: () => _onDelete(context, task),
+          );
+        }),
       ],
     );
   }

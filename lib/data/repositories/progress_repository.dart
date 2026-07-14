@@ -53,6 +53,39 @@ class ProgressRepository {
         .watch(fireImmediately: true);
   }
 
+  /// Decrementa o log de progresso do dia corrente em [points] pontos.
+  /// Reverte o que [incrementToday] fez: subtrai 1 de [tasksCompleted] e
+  /// [points] de [pointsEarned]. Se [tasksCompleted] chegar a zero, zera
+  /// a streak do dia (quebra a sequência). Caso contrário, recalcula a
+  /// streak baseada no dia anterior para manter a consistência.
+  Future<void> decrementToday(int points) async {
+    final today = DateHelpers.today();
+
+    await _isar.writeTxn(() async {
+      final log = await _isar.progressLogs.getByDay(today);
+      if (log == null || log.tasksCompleted <= 0) return;
+
+      log.tasksCompleted -= 1;
+      log.pointsEarned -= points;
+      if (log.pointsEarned < 0) log.pointsEarned = 0;
+
+      if (log.tasksCompleted <= 0) {
+        log.currentStreak = 0;
+      } else {
+        // Recalcula streak baseada no dia anterior
+        final yesterday = DateHelpers.yesterday();
+        final yesterdayLog = await _isar.progressLogs.getByDay(yesterday);
+        if (yesterdayLog != null && yesterdayLog.tasksCompleted > 0) {
+          log.currentStreak = yesterdayLog.currentStreak + 1;
+        } else {
+          log.currentStreak = 1;
+        }
+      }
+
+      await _isar.progressLogs.putByDay(log);
+    });
+  }
+
   /// Busca o log de um dia específico.
   Future<ProgressLog?> getByDay(DateTime day) async {
     return _isar.progressLogs.getByDay(DateHelpers.normalizeToDay(day));

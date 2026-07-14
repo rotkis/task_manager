@@ -80,33 +80,79 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 },
                 // Marcadores nos dias que têm tarefas
                 eventLoader: (day) => controller.getTasksForDay(day),
-                calendarBuilders: CalendarBuilders(
-                  markerBuilder: (context, day, events) {
-                    if (events.isEmpty) return const SizedBox.shrink();
-                    return _buildMarker(context, events);
-                  },
-                ),
                 headerStyle: const HeaderStyle(
                   formatButtonVisible: false,
                   titleCentered: true,
                 ),
+                rowHeight: 52,
                 calendarStyle: CalendarStyle(
-                  todayDecoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
-                  ),
-                  selectedDecoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    shape: BoxShape.circle,
+                  cellPadding: const EdgeInsets.only(
+                    top: 2,
+                    bottom: 6,
+                    left: 2,
+                    right: 2,
                   ),
                   markerDecoration: BoxDecoration(
                     color: Colors.transparent,
                     shape: BoxShape.circle,
                   ),
                 ),
+                calendarBuilders: CalendarBuilders(
+                  markerBuilder: (context, day, events) {
+                    if (events.isEmpty) return const SizedBox.shrink();
+                    return _buildMarker(context, events);
+                  },
+                  todayBuilder: (context, day, focusedDay) {
+                    return Center(
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${day.day}',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  selectedBuilder: (context, day, focusedDay) {
+                    return Center(
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: Text(
+                            '${day.day}',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
               );
             },
           ),
+          const SizedBox(height: 8),
           const Divider(height: 1),
 
           // ─── Lista de tarefas do dia selecionado ─────────

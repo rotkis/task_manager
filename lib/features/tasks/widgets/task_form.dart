@@ -1,13 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/task_item.dart';
+import '../../../data/models/sub_task_item.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/date_helpers.dart';
 import '../../../core/utils/recurrence_parser.dart';
 import '../controllers/task_controller.dart';
+import 'subtask_checklist.dart';
 
 /// Seletor de regra de recorrência para o formulário de tarefa.
 class _RecurrenceSelector extends StatelessWidget {
@@ -161,6 +165,11 @@ class TaskForm extends StatefulWidget {
 
 class _TaskFormState extends State<TaskForm> {
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
+
+  /// Subtarefas pendentes de persistência (criadas em modo criação,
+  /// antes da tarefa existir). Preenchido via [onPendingChanged].
+  List<SubTaskItem> _pendingSubtasks = [];
 
   late final TextEditingController _titleCtrl;
   late final TextEditingController _descCtrl;
@@ -327,6 +336,7 @@ class _TaskFormState extends State<TaskForm> {
     _setsCtrl.dispose();
     _durationCtrl.dispose();
     _pointsCtrl.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -417,8 +427,55 @@ class _TaskFormState extends State<TaskForm> {
       try {
         if (isEditing) {
           await context.read<TaskController>().updateTask(task);
+
+          // Nudge de adiamento repetido (Módulo 8)
+          if (task.postponeCount >= 3 && mounted) {
+            final shouldOpenSubtasks = await showDialog<bool>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('Tarefa adiada várias vezes'),
+                content: Text(
+                  'Esta tarefa já foi adiada ${task.postponeCount} vezes. '
+                  'Que tal quebrá-la em passos menores usando subtarefas? '
+                  'Isso pode ajudar a torná-la menos intimidante.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(false),
+                    child: const Text('Apenas salvar'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(true),
+                    child: const Text('Quebrar em passos'),
+                  ),
+                ],
+              ),
+            );
+            if (shouldOpenSubtasks == true && mounted) {
+              // Mantém o formulário aberto e rola até o SubtaskChecklist
+              // para o usuário adicionar passos imediatamente.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                _scrollController.animateTo(
+                  _scrollController.position.maxScrollExtent,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                );
+              });
+              return;
+            }
+          }
         } else {
-          await context.read<TaskController>().createTask(task);
+          await context.read<TaskController>().createTask(
+                task,
+                subtasks: _pendingSubtasks.isNotEmpty ? _pendingSubtasks : null,
+              );
+          // Atualiza o cache para que o card reflita as subtarefas
+          if (_pendingSubtasks.isNotEmpty) {
+            unawaited(context
+                .read<TaskController>()
+                .refreshSubtaskCacheForTask(task.id));
+          }
         }
       } catch (e) {
         if (!mounted) return;
@@ -452,6 +509,7 @@ class _TaskFormState extends State<TaskForm> {
       body: Form(
         key: _formKey,
         child: ListView(
+          controller: _scrollController,
           padding: const EdgeInsets.all(16),
           children: [
             // ─── Título ─────────────────────────────────────
@@ -669,6 +727,17 @@ class _TaskFormState extends State<TaskForm> {
                     const Text('Editar esta ocorrência não afeta as outras'),
               ),
             ],
+            const Divider(height: 24),
+
+            // ─── Subtarefas (checklist) ───────────────────────
+            SubtaskChecklist(
+              // Em criação (task == null) usa 0 como placeholder;
+              // após criar a task, persistimos as pendentes com o id real.
+              parentTaskId: widget.task?.id ?? 0,
+              showAddField: true,
+              showTypeSelector: true,
+              onPendingChanged: (list) => _pendingSubtasks = list,
+            ),
           ],
         ),
       ),

@@ -69,6 +69,11 @@ class TaskItem {
   /// A própria tarefa-modelo tem este campo como null.
   int? parentRecurringId;
 
+  /// Quantas vezes a tarefa foi adiada (data empurrada pra frente).
+  /// Incrementado em [TaskController.updateTask] quando a nova
+  /// [scheduledDate] é posterior à anterior. Resetado ao completar.
+  int postponeCount = 0;
+
   DateTime createdAt = DateTime.now();
 
   @Index()

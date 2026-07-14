@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:task_manager/data/models/task_item.dart';
+import 'package:task_manager/data/models/sub_task_item.dart';
 import 'package:task_manager/data/repositories/task_repository.dart';
 import '../helpers/isar_test_helper.dart';
 
@@ -31,13 +32,14 @@ void main() {
       // Gera instâncias
       await repo.ensureUpcomingInstances(daysAhead: 30);
 
-      // Verifica que foram criadas instâncias para cada dia (hoje + 30)
+      // Verifica que foram criadas instâncias para os próximos 30 dias
+      // (o dia do modelo não é duplicado como instância)
       final instances = await repo.getInstancesInRange(
         model.id,
         DateTime.now().subtract(const Duration(days: 1)),
         DateTime.now().add(const Duration(days: 31)),
       );
-      expect(instances.length, 31); // hoje + 30 dias
+      expect(instances.length, 30); // 30 dias futuros (modelo já cobre hoje)
 
       // Todas apontam para o modelo
       for (final inst in instances) {
@@ -63,7 +65,7 @@ void main() {
         DateTime.now().subtract(const Duration(days: 1)),
         DateTime.now().add(const Duration(days: 6)),
       );
-      expect(firstGen.length, 6); // hoje + 5
+      expect(firstGen.length, 5); // 5 dias futuros (modelo já cobre hoje)
 
       // Segunda geração (mesmo período)
       await repo.ensureUpcomingInstances(daysAhead: 5);
@@ -72,7 +74,7 @@ void main() {
         DateTime.now().subtract(const Duration(days: 1)),
         DateTime.now().add(const Duration(days: 6)),
       );
-      expect(secondGen.length, 6); // ainda 6, sem duplicatas
+      expect(secondGen.length, 5); // ainda 5, sem duplicatas
     });
 
     test('cria instâncias semanais nos dias corretos', () async {
@@ -94,8 +96,8 @@ void main() {
         DateTime(2026, 7, 26),
       );
 
-      // 13 Jul (Mon) + 15 Jul (Wed) + 17 Jul (Fri) + 20 Jul (Mon) + 22 Jul (Wed) + 24 Jul (Fri) = 6
-      expect(instances.length, 6);
+      // Modelo está em 13 Jul (Mon). Instâncias: 15(Wed)+17(Fri)+20(Mon)+22(Wed)+24(Fri) = 5
+      expect(instances.length, 5);
       for (final inst in instances) {
         final wd = inst.scheduledDate!.weekday;
         expect([1, 3, 5], contains(wd));
@@ -119,8 +121,8 @@ void main() {
         DateTime(2026, 7, 21),
       );
 
-      // 13, 15, 17, 19, 21 = 5 instâncias
-      expect(instances.length, 5);
+      // 15, 17, 19, 21 = 4 instâncias (13 é a data do modelo, não duplica)
+      expect(instances.length, 4);
     });
 
     test('getModelTasks retorna apenas tarefas com recurrenceRule', () async {
@@ -167,6 +169,63 @@ void main() {
         DateTime.now().add(const Duration(days: 6)),
       );
       expect(instances, isEmpty);
+    });
+
+    test('instâncias recorrentes recebem cópia das subtarefas do modelo',
+        () async {
+      // Cria um modelo diário com 2 subtarefas
+      final model = TaskItem()
+        ..title = 'Treino'
+        ..type = TaskType.generic
+        ..rewardPoints = 10
+        ..recurrenceRule = 'daily'
+        ..scheduledDate = DateTime.now();
+      await repo.create(model);
+
+      // Adiciona 2 subtarefas ao modelo
+      await repo.addSubtask(SubTaskItem()
+        ..parentTaskId = model.id
+        ..title = 'Flexão'
+        ..order = 0);
+      await repo.addSubtask(SubTaskItem()
+        ..parentTaskId = model.id
+        ..title = 'Prancha'
+        ..order = 1);
+
+      // Gera instâncias
+      await repo.ensureUpcomingInstances(daysAhead: 3);
+
+      // Verifica instâncias
+      final instances = await repo.getInstancesInRange(
+        model.id,
+        DateTime.now().subtract(const Duration(days: 1)),
+        DateTime.now().add(const Duration(days: 4)),
+      );
+      expect(instances.length, 3);
+
+      // Cada instância deve ter sua própria cópia das 2 subtarefas
+      for (final inst in instances) {
+        final subtasks = await repo.getSubtasks(inst.id);
+        expect(subtasks.length, 2,
+            reason: 'Instância ${inst.id} deveria ter 2 subtarefas');
+
+        // Verifica títulos e ordem
+        expect(subtasks[0].title, 'Flexão');
+        expect(subtasks[0].order, 0);
+        expect(subtasks[0].isCompleted, false);
+        expect(subtasks[1].title, 'Prancha');
+        expect(subtasks[1].order, 1);
+        expect(subtasks[1].isCompleted, false);
+
+        // As subtarefas da instância são independentes (IDs diferentes)
+        expect(subtasks[0].id, isNot(equals(subtasks[1].id)));
+      }
+
+      // Subtarefas do modelo continuam intactas
+      final modelSubtasks = await repo.getSubtasks(model.id);
+      expect(modelSubtasks.length, 2);
+      expect(modelSubtasks[0].title, 'Flexão');
+      expect(modelSubtasks[1].title, 'Prancha');
     });
   });
 }

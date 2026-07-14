@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -97,14 +99,18 @@ class TasksScreen extends StatelessWidget {
   }
 
   Future<void> _onToggleComplete(BuildContext context, TaskItem task) async {
-    if (task.isCompleted) return;
+    final controller = context.read<TaskController>();
     try {
-      await context.read<TaskController>().completeTask(task.id);
+      if (task.isCompleted) {
+        await controller.uncompleteTask(task.id);
+      } else {
+        await controller.completeTask(task.id);
+      }
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao concluir: $e'),
+          content: Text('Erro ao alternar: $e'),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
@@ -188,12 +194,35 @@ class TasksScreen extends StatelessWidget {
   Widget _buildCard(BuildContext context, TaskItem task) {
     final controller = context.read<TaskController>();
     final messenger = ScaffoldMessenger.of(context);
+    final subtasks = controller.subtasksForTask(task.id);
     return TaskCard(
       task: task,
+      subtasks: subtasks.isEmpty ? null : subtasks,
+      onToggleSubtask: (subtaskId) =>
+          _onToggleSubtask(context, task, subtaskId),
       onTap: () => _onCardTap(context, task),
       onToggleComplete: () => _onToggleComplete(context, task),
       onDelete: () => _onDelete(controller, messenger, task),
     );
+  }
+
+  Future<void> _onToggleSubtask(
+      BuildContext context, TaskItem task, int subtaskId) async {
+    final controller = context.read<TaskController>();
+    try {
+      await controller.taskRepo.toggleSubtask(subtaskId);
+      if (!context.mounted) return;
+      // Recarrega o cache para garantir consistência com o banco
+      unawaited(controller.refreshSubtaskCacheForTask(task.id));
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao alternar subtarefa: $e'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
+    }
   }
 
   Future<void> _onDelete(

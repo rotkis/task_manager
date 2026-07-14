@@ -126,5 +126,43 @@ void main() {
       expect(controller.completedTasks.length, 1);
       expect(controller.completedTasks.first.title, 'Concluída');
     });
+
+    test('createTask com recurrenceRule gera instâncias futuras imediatamente',
+        () async {
+      // Arrange: criar uma tarefa-modelo recorrente para amanhã
+      final today = DateHelpers.today();
+      final tomorrow = today.add(const Duration(days: 1));
+      final task = TaskItem()
+        ..title = 'Hábito diário'
+        ..type = TaskType.generic
+        ..scheduledDate = tomorrow
+        ..rewardPoints = 10
+        ..recurrenceRule = 'daily';
+
+      // Act
+      await controller.createTask(task);
+
+      // Assert: tarefa modelo foi salva
+      final models = await taskRepo.getModelTasks();
+      expect(models.length, 1, reason: 'deve existir 1 tarefa-modelo');
+      expect(models.first.title, 'Hábito diário');
+      expect(models.first.recurrenceRule, 'daily');
+
+      // Assert: instância do dia seguinte existe (amanhã é a data do modelo,
+      // então a primeira instância gerada é depois de amanhã)
+      final dayAfter = tomorrow.add(const Duration(days: 1));
+      final instances = await taskRepo.getInstancesInRange(
+        models.first.id,
+        dayAfter,
+        dayAfter,
+      );
+      expect(instances.length, 1,
+          reason:
+              'deve existir instância para depois de amanhã imediatamente após createTask');
+      expect(instances.first.title, 'Hábito diário');
+      expect(instances.first.parentRecurringId, models.first.id);
+      expect(instances.first.isCompleted, false,
+          reason: 'instância futura não deve estar concluída');
+    });
   });
 }

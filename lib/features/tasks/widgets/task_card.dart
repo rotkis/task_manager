@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../data/models/task_item.dart';
+import '../../../data/models/sub_task_item.dart';
 import '../../../core/utils/date_helpers.dart';
+import 'subtask_checklist.dart';
 
 /// Card de tarefa na lista.
 ///
@@ -17,12 +19,20 @@ class TaskCard extends StatelessWidget {
   final VoidCallback? onToggleComplete;
   final VoidCallback? onDelete;
 
+  /// Subtarefas para exibir no card (com checkboxes interativos).
+  final List<SubTaskItem>? subtasks;
+
+  /// Callback quando o usuário alterna uma subtarefa no card.
+  final ValueChanged<int>? onToggleSubtask;
+
   const TaskCard({
     super.key,
     required this.task,
     this.onTap,
     this.onToggleComplete,
     this.onDelete,
+    this.subtasks,
+    this.onToggleSubtask,
   });
 
   bool get _isOverdue {
@@ -110,100 +120,115 @@ class TaskCard extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Checkbox para qualquer tipo
-                Checkbox(
-                  value: task.isCompleted,
-                  onChanged: (_) => onToggleComplete?.call(),
-                ),
-                const SizedBox(width: 4),
-                // Ícone do tipo (apenas informativo)
-                Icon(
-                  _typeIcon,
-                  size: 18,
-                  color: task.isCompleted
-                      ? theme.colorScheme.primary
-                      : (_isOverdue
-                          ? theme.colorScheme.error
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.6)),
-                ),
-                const SizedBox(width: 8),
+                Row(
+                  children: [
+                    // Checkbox para qualquer tipo
+                    Checkbox(
+                      value: task.isCompleted,
+                      onChanged: (_) => onToggleComplete?.call(),
+                    ),
+                    const SizedBox(width: 4),
+                    // Ícone do tipo (apenas informativo)
+                    Icon(
+                      _typeIcon,
+                      size: 18,
+                      color: task.isCompleted
+                          ? theme.colorScheme.primary
+                          : (_isOverdue
+                              ? theme.colorScheme.error
+                              : theme.colorScheme.onSurface
+                                  .withValues(alpha: 0.6)),
+                    ),
+                    const SizedBox(width: 8),
 
-                // Corpo do card
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        task.title,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
-                          color: task.isCompleted
-                              ? theme.colorScheme.onSurface
-                                  .withValues(alpha: 0.5)
-                              : null,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
+                    // Corpo do card
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _typeLabel(),
-                            style: theme.textTheme.bodySmall,
-                          ),
-                          if (_isOverdue) ...[
-                            const SizedBox(width: 8),
-                            Text(
-                              'Atrasada',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.error,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            task.title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              decoration: task.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              color: task.isCompleted
+                                  ? theme.colorScheme.onSurface
+                                      .withValues(alpha: 0.5)
+                                  : null,
                             ),
-                          ],
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              Text(
+                                _typeLabel(),
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              if (_isOverdue) ...[
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Atrasada',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.error,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
 
-                // Data/horário + pontos
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (task.scheduledTime != null)
-                      Text(
-                        DateFormat('HH:mm').format(task.scheduledTime!),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
+                    // Data/horário + pontos
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (task.scheduledTime != null)
+                          Text(
+                            DateFormat('HH:mm').format(task.scheduledTime!),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        if (task.scheduledDate != null)
+                          Text(
+                            DateFormat('dd/MM').format(task.scheduledDate!),
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '${task.rewardPoints}pts',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
-                      ),
-                    if (task.scheduledDate != null)
-                      Text(
-                        DateFormat('dd/MM').format(task.scheduledDate!),
-                        style: theme.textTheme.bodySmall,
-                      ),
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color:
-                            theme.colorScheme.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${task.rewardPoints}pts',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      ],
                     ),
                   ],
+                ),
+                // Subtarefas (checklist) — só leitura no card
+                SubtaskChecklist(
+                  parentTaskId: task.id,
+                  showAddField: false,
+                  showTypeSelector: false,
+                  initialSubtasks: subtasks,
+                  onToggleSubtask: onToggleSubtask,
                 ),
               ],
             ),

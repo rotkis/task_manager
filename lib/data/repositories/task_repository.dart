@@ -4,6 +4,7 @@ import 'package:isar_community/isar.dart';
 
 import '../isar/isar_service.dart';
 import '../models/task_item.dart';
+import '../models/sub_task_item.dart';
 import '../../core/utils/date_helpers.dart';
 import '../../core/utils/recurrence_parser.dart';
 
@@ -132,6 +133,10 @@ class TaskRepository {
 
     if (dates.isEmpty) return;
 
+    // Ignora a data do próprio modelo — o modelo já é a tarefa desse dia
+    final modelDate =
+        DateHelpers.normalizeToDay(model.scheduledDate ?? model.createdAt);
+
     // Busca instâncias já existentes no período
     final existing = await getInstancesInRange(model.id, today, endDate);
     final existingDates = existing
@@ -141,6 +146,7 @@ class TaskRepository {
 
     // Cria as que faltam
     for (final date in dates) {
+      if (date == modelDate) continue; // modelo já cobre este dia
       if (!existingDates.contains(date)) {
         final instance = TaskItem()
           ..title = model.title
@@ -157,7 +163,25 @@ class TaskRepository {
           ..scheduledTime = model.scheduledTime
           ..parentRecurringId = model.id
           ..recurrenceRule = null; // instância não é modelo
-        await _isar.writeTxn(() => _isar.taskItems.put(instance));
+        await _isar.writeTxn(() async {
+          await _isar.taskItems.put(instance);
+          // Copia as subtarefas do modelo para a nova instância
+          final modelSubtasks = await _isar.subTaskItems
+              .where()
+              .filter()
+              .parentTaskIdEqualTo(model.id)
+              .sortByOrder()
+              .findAll();
+          for (final sub in modelSubtasks) {
+            final clone = SubTaskItem()
+              ..parentTaskId = instance.id
+              ..title = sub.title
+              ..type = sub.type
+              ..isCompleted = false // instância nova começa não concluída
+              ..order = sub.order;
+            await _isar.subTaskItems.put(clone);
+          }
+        });
       }
     }
   }
@@ -169,5 +193,78 @@ class TaskRepository {
     for (final model in models) {
       await ensureInstancesForModel(model, daysAhead: daysAhead);
     }
+  }
+
+  // ─── Subtarefas (Módulo 7) ──────────────────────────────────────────
+
+  /// Stream de subtarefas de uma tarefa, ordenadas por [order].
+  Stream<List<SubTaskItem>> watchSubtasks(int parentTaskId) {
+    return _isar.subTaskItems
+        .where()
+        .filter()
+        .parentTaskIdEqualTo(parentTaskId)
+        .sortByOrder()
+        .watch(fireImmediately: true);
+  }
+
+  /// Busca todas as subtarefas de uma tarefa (one-shot).
+  Future<List<SubTaskItem>> getSubtasks(int parentTaskId) {
+    return _isar.subTaskItems
+        .where()
+        .filter()
+        .parentTaskIdEqualTo(parentTaskId)
+        .sortByOrder()
+        .findAll();
+  }
+
+  /// Busca subtarefas para múltiplas tarefas de uma vez.
+  /// Retorna um mapa de taskId → lista de subtarefas.
+  Future<Map<int, List<SubTaskItem>>> getSubtasksForTasks(
+      List<int> parentIds) async {
+    if (parentIds.isEmpty) return {};
+    final all = await _isar.subTaskItems.where().sortByOrder().findAll();
+    final result = <int, List<SubTaskItem>>{};
+    for (final id in parentIds) {
+      result[id] = all.where((s) => s.parentTaskId == id).toList();
+    }
+    return result;
+  }
+
+  /// Adiciona uma subtarefa a uma tarefa.
+  /// [order] é opcional; se não informado, calcula o próximo disponível.
+  Future<int> addSubtask(SubTaskItem subtask) async {
+    if (subtask.order == 0) {
+      // Se não definida, coloca no final da lista
+      final existing = await getSubtasks(subtask.parentTaskId);
+      subtask.order = existing.isEmpty ? 0 : existing.last.order + 1;
+    }
+    return _isar.writeTxn(() => _isar.subTaskItems.put(subtask));
+  }
+
+  /// Alterna o estado [isCompleted] de uma subtarefa.
+  Future<void> toggleSubtask(int subtaskId) async {
+    final subtask = await _isar.subTaskItems.get(subtaskId);
+    if (subtask == null) return;
+    subtask.isCompleted = !subtask.isCompleted;
+    await _isar.writeTxn(() => _isar.subTaskItems.put(subtask));
+  }
+
+  /// Remove uma subtarefa pelo [id].
+  Future<bool> deleteSubtask(int id) async {
+    return _isar.writeTxn(() => _isar.subTaskItems.delete(id));
+  }
+
+  /// Reordena as subtarefas de uma tarefa. Recebe uma lista de [ids] na
+  /// nova ordem desejada. Atualiza o campo [order] de cada uma.
+  Future<void> reorderSubtasks(int parentTaskId, List<int> ids) async {
+    await _isar.writeTxn(() async {
+      for (int i = 0; i < ids.length; i++) {
+        final subtask = await _isar.subTaskItems.get(ids[i]);
+        if (subtask != null && subtask.parentTaskId == parentTaskId) {
+          subtask.order = i;
+          await _isar.subTaskItems.put(subtask);
+        }
+      }
+    });
   }
 }

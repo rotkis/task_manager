@@ -14,18 +14,24 @@ import '../helpers/isar_test_helper.dart';
 
 /// Testes de regressão visual (golden) das telas principais.
 ///
-/// IMPORTANTE: estes testes NÃO usam Isar/streams. Em vez de chamar
-/// controller.init() (que ativaria streams do Isar e causaria race
-/// condition no tearDown do testWidgets), usam o método
-/// [TaskController.setTodayTasksDirectly] para injetar dados
-/// estaticamente.
-///
 /// Gere/atualize as imagens de referência com:
 ///   flutter test --update-goldens --tags golden
 ///
 /// Depois, execute para comparar:
 ///   flutter test --tags golden
 void main() {
+  late IsarTestHelper isarHelper;
+
+  setUp(() async {
+    isarHelper = IsarTestHelper();
+    await isarHelper.open();
+    await initializeDateFormatting('pt_BR');
+  });
+
+  tearDown(() async {
+    await isarHelper.close();
+  });
+
   group('Golden — TasksScreen', () {
     testWidgets('vazia — tema light', (tester) async {
       final controller = TaskController();
@@ -127,18 +133,7 @@ void main() {
   });
 
   group('Golden — CalendarScreen markers', () {
-    late IsarTestHelper isarHelper;
     final today = DateTime.now();
-
-    setUp(() async {
-      isarHelper = IsarTestHelper();
-      await isarHelper.open();
-      await initializeDateFormatting('pt_BR');
-    });
-
-    tearDown(() async {
-      await isarHelper.close();
-    });
 
     /// Cria uma tarefa no dia de hoje com o estado e título dados.
     TaskItem task({

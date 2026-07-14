@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:isar_community/isar.dart';
 import 'package:task_manager/data/models/task_item.dart';
 import 'package:task_manager/data/models/progress_log.dart';
+import 'package:task_manager/data/models/sub_task_item.dart';
 import 'package:task_manager/data/isar/isar_service.dart';
 
 /// Abre uma instância Isar temporária (em disco, diretório system temp)
@@ -18,7 +19,7 @@ class IsarTestHelper {
   Future<void> open() async {
     _dir = await Directory.systemTemp.createTemp('isar_test_');
     _isar = await Isar.open(
-      [TaskItemSchema, ProgressLogSchema],
+      [TaskItemSchema, ProgressLogSchema, SubTaskItemSchema],
       directory: _dir!.path,
     );
     IsarService.setTestInstance(_isar!);

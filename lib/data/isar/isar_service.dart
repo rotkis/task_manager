@@ -3,6 +3,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../models/task_item.dart';
 import '../models/progress_log.dart';
+import '../models/sub_task_item.dart';
 
 /// Ponto único de acesso ao banco Isar. Chame [IsarService.open]
 /// uma vez no main() antes de rodar o app.
@@ -18,7 +19,7 @@ class IsarService {
     if (_instance != null) return;
     final dir = await getApplicationDocumentsDirectory();
     _instance = await Isar.open(
-      [TaskItemSchema, ProgressLogSchema],
+      [TaskItemSchema, ProgressLogSchema, SubTaskItemSchema],
       directory: dir.path,
     );
   }
