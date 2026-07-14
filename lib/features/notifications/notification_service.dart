@@ -3,6 +3,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../data/models/task_item.dart';
+import '../../data/repositories/background_notification_handler.dart';
 
 /// Wrapper do pacote `flutter_local_notifications`.
 ///
@@ -27,7 +28,10 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _plugin!.initialize(initSettings);
+    await _plugin!.initialize(
+      initSettings,
+      onDidReceiveBackgroundNotificationResponse: handleBackgroundCompleteTask,
+    );
     _initialized = true;
   }
 
@@ -58,7 +62,15 @@ class NotificationService {
     final notificationId = task.id;
     task.notificationId = notificationId;
 
-    const androidDetails = AndroidNotificationDetails(
+    final actionButtons = [
+      const AndroidNotificationAction(
+        'COMPLETE_TASK',
+        'Concluir',
+        cancelNotification: true,
+        showsUserInterface: false,
+      ),
+    ];
+    final androidDetails = AndroidNotificationDetails(
       'task_channel',
       'Task Reminders',
       channelDescription: 'Notifications for scheduled tasks',
@@ -67,9 +79,10 @@ class NotificationService {
       playSound: true,
       enableVibration: true,
       fullScreenIntent: true,
+      actions: actionButtons,
     );
     const iosDetails = DarwinNotificationDetails();
-    const details = NotificationDetails(
+    final details = NotificationDetails(
       android: androidDetails,
       iOS: iosDetails,
     );
@@ -101,6 +114,7 @@ channel:          task_channel
       androidScheduleMode: AndroidScheduleMode.exact,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
+      payload: task.id.toString(),
     );
 
     // ─── Verifica se a notificação foi registrada ────────────
