@@ -1,5 +1,7 @@
 import 'package:isar_community/isar.dart';
 
+import '../../core/utils/date_helpers.dart';
+
 // ignore_for_file: experimental_member_use
 part 'task_item.g.dart'; // gerado por: flutter pub run build_runner build
 
@@ -78,4 +80,36 @@ class TaskItem {
 
   @Index()
   DateTime get indexedScheduledDate => scheduledDate ?? DateTime(1970);
+
+  /// Retorna `true` se a tarefa está atrasada (overdue): não concluída
+  /// e com data/horário agendado já no passado.
+  ///
+  /// Usa a mesma lógica em [TaskCard] e [TasksScreen] — mantida em um
+  /// único lugar para garantir consistência.
+  bool get isOverdue {
+    if (isCompleted) return false;
+    if (scheduledDate == null) return false;
+    final now = DateTime.now();
+    final today = DateHelpers.today();
+
+    // Data agendada anterior a hoje → atrasado
+    if (DateHelpers.normalizeToDay(scheduledDate!).isBefore(today)) {
+      return true;
+    }
+
+    // É hoje mas o horário já passou → atrasado
+    if (scheduledTime != null &&
+        DateHelpers.normalizeToDay(scheduledDate!) == today) {
+      final combined = DateTime(
+        scheduledDate!.year,
+        scheduledDate!.month,
+        scheduledDate!.day,
+        scheduledTime!.hour,
+        scheduledTime!.minute,
+      );
+      if (now.isAfter(combined)) return true;
+    }
+
+    return false;
+  }
 }

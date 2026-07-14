@@ -3,7 +3,6 @@ import 'package:intl/intl.dart';
 
 import '../../../data/models/task_item.dart';
 import '../../../data/models/sub_task_item.dart';
-import '../../../core/utils/date_helpers.dart';
 import 'subtask_checklist.dart';
 
 /// Card de tarefa na lista.
@@ -35,32 +34,7 @@ class TaskCard extends StatelessWidget {
     this.onToggleSubtask,
   });
 
-  bool get _isOverdue {
-    if (task.isCompleted) return false;
-    if (task.scheduledDate == null) return false;
-    final now = DateTime.now();
-    final today = DateHelpers.today();
-
-    // Se a data agendada é anterior a hoje → atrasado
-    if (DateHelpers.normalizeToDay(task.scheduledDate!).isBefore(today)) {
-      return true;
-    }
-
-    // Se é hoje mas tem horário e já passou → atrasado
-    if (task.scheduledTime != null &&
-        DateHelpers.normalizeToDay(task.scheduledDate!) == today) {
-      final combined = DateTime(
-        task.scheduledDate!.year,
-        task.scheduledDate!.month,
-        task.scheduledDate!.day,
-        task.scheduledTime!.hour,
-        task.scheduledTime!.minute,
-      );
-      if (now.isAfter(combined)) return true;
-    }
-
-    return false;
-  }
+  bool get _isOverdue => task.isOverdue;
 
   IconData get _typeIcon {
     switch (task.type) {

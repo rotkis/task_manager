@@ -267,4 +267,62 @@ class TaskRepository {
       }
     });
   }
+
+  // ─── Busca e filtro (Módulo 11) ──────────────────────────────────────
+
+  /// Stream de tarefas com filtros combináveis.
+  ///
+  /// Suporta:
+  /// - [query]: busca textual por título ou descrição (case-insensitive)
+  /// - [type]: filtrar por tipo de tarefa
+  /// - [isCompleted]: `true` = só concluídas, `false` = só pendentes,
+  ///   `null` = ambos
+  /// - [dateStart] / [dateEnd]: intervalo de data agendada (inclusive)
+  ///
+  /// A filtragem textual é feita em memória (o Isar não expõe `contains()`
+  /// nativamente para todos os campos). As demais condições usam query
+  /// do Isar sempre que possível.
+  Stream<List<TaskItem>> watchFiltered({
+    String? query,
+    TaskType? type,
+    bool? isCompleted,
+    DateTime? dateStart,
+    DateTime? dateEnd,
+  }) {
+    // Base query — usa watchAll sem filtro e aplica as condições em memória
+    // para evitar complexidade de construção condicional de query Isar.
+    return watchAll().map((tasks) {
+      var filtered = tasks;
+
+      if (type != null) {
+        filtered = filtered.where((t) => t.type == type).toList();
+      }
+      if (isCompleted != null) {
+        filtered = filtered.where((t) => t.isCompleted == isCompleted).toList();
+      }
+      if (dateStart != null) {
+        final start = DateHelpers.normalizeToDay(dateStart);
+        filtered = filtered.where((t) {
+          final d = t.scheduledDate;
+          return d == null || !d.isBefore(start);
+        }).toList();
+      }
+      if (dateEnd != null) {
+        final end = DateHelpers.normalizeToDay(dateEnd);
+        filtered = filtered.where((t) {
+          final d = t.scheduledDate;
+          return d == null || !d.isAfter(end);
+        }).toList();
+      }
+      if (query != null && query.isNotEmpty) {
+        final q = query.toLowerCase();
+        filtered = filtered.where((t) {
+          if (t.title.toLowerCase().contains(q)) return true;
+          return t.description?.toLowerCase().contains(q) ?? false;
+        }).toList();
+      }
+
+      return filtered;
+    });
+  }
 }
