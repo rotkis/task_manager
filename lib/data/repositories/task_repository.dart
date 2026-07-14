@@ -269,7 +269,6 @@ class TaskRepository {
   }
 
   // ─── Busca e filtro (Módulo 11) ──────────────────────────────────────
-
   /// Stream de tarefas com filtros combináveis.
   ///
   /// Suporta:
@@ -278,6 +277,7 @@ class TaskRepository {
   /// - [isCompleted]: `true` = só concluídas, `false` = só pendentes,
   ///   `null` = ambos
   /// - [dateStart] / [dateEnd]: intervalo de data agendada (inclusive)
+  /// - [tag]: filtrar por tag (exact match, case-insensitive)
   ///
   /// A filtragem textual é feita em memória (o Isar não expõe `contains()`
   /// nativamente para todos os campos). As demais condições usam query
@@ -288,6 +288,7 @@ class TaskRepository {
     bool? isCompleted,
     DateTime? dateStart,
     DateTime? dateEnd,
+    String? tag,
   }) {
     // Base query — usa watchAll sem filtro e aplica as condições em memória
     // para evitar complexidade de construção condicional de query Isar.
@@ -320,6 +321,12 @@ class TaskRepository {
           if (t.title.toLowerCase().contains(q)) return true;
           return t.description?.toLowerCase().contains(q) ?? false;
         }).toList();
+      }
+      if (tag != null && tag.isNotEmpty) {
+        final t = tag.toLowerCase();
+        filtered = filtered
+            .where((task) => task.tags.any((tag) => tag.toLowerCase() == t))
+            .toList();
       }
 
       return filtered;

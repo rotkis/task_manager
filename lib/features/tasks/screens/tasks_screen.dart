@@ -43,11 +43,14 @@ class _TasksScreenState extends State<TasksScreen> {
   String _searchQuery = '';
   TaskType? _typeFilter;
   TaskStatusFilter _statusFilter = TaskStatusFilter.all;
+  String? _tagFilter; // Módulo 14
 
-  /// `true` quando há pelo menos um filtro de tipo ou status ativo
+  /// `true` quando há pelo menos um filtro de tipo, status ou tag ativo
   /// (a busca textual fica sempre visível, não entra neste cálculo).
   bool get _hasActiveFilters =>
-      _typeFilter != null || _statusFilter != TaskStatusFilter.all;
+      _typeFilter != null ||
+      _statusFilter != TaskStatusFilter.all ||
+      _tagFilter != null;
 
   @override
   void initState() {
@@ -205,6 +208,13 @@ class _TasksScreenState extends State<TasksScreen> {
           if (!_isOverdue(t)) return false;
       }
 
+      // Filtro por tag (Módulo 14)
+      if (_tagFilter != null &&
+          !t.tags
+              .any((tag) => tag.toLowerCase() == _tagFilter!.toLowerCase())) {
+        return false;
+      }
+
       return true;
     }).toList();
   }
@@ -312,13 +322,26 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  /// Abre o bottom sheet com os filtros de tipo e status.
+  /// Abre o bottom sheet com os filtros de tipo, status e tags.
   /// As alterações nos chips são aplicadas imediatamente ao estado
   /// do widget ([setState]). Fechar o painel NÃO reseta os filtros
   /// — apenas esconde a UI deles.
   void _openFilterSheet(BuildContext context) {
+    // Coleciona todas as tags únicas das tarefas do dia
+    final allTags = <String>{};
+    try {
+      final controller = context.read<TaskController>();
+      for (final t in controller.pendingTasks) {
+        allTags.addAll(t.tags);
+      }
+      for (final t in controller.completedTasks) {
+        allTags.addAll(t.tags);
+      }
+    } catch (_) {}
+
     showModalBottomSheet<void>(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -409,6 +432,36 @@ class _TasksScreenState extends State<TasksScreen> {
                   ),
                 ],
               ),
+              // ── Tags (Módulo 14) ──────────────────────────
+              if (allTags.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text('Tag', style: Theme.of(ctx).textTheme.labelLarge),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    _sheetFilterChip(
+                      label: 'Todas',
+                      selected: _tagFilter == null,
+                      onSelected: (_) {
+                        setState(() => _tagFilter = null);
+                        setSheetState(() {});
+                      },
+                    ),
+                    for (final tag in allTags.toList()..sort())
+                      _sheetFilterChip(
+                        label: tag,
+                        selected: _tagFilter == tag,
+                        onSelected: (_) {
+                          setState(() =>
+                              _tagFilter = _tagFilter == tag ? null : tag);
+                          setSheetState(() {});
+                        },
+                      ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 20),
               // ── Ações ─────────────────────────────────────
               Row(
@@ -419,6 +472,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       setState(() {
                         _typeFilter = null;
                         _statusFilter = TaskStatusFilter.all;
+                        _tagFilter = null;
                       });
                       setSheetState(() {});
                     },

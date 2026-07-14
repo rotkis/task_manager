@@ -76,6 +76,11 @@ class TaskItem {
   /// [scheduledDate] é posterior à anterior. Resetado ao completar.
   int postponeCount = 0;
 
+  // ─── Tags / categorias (Módulo 14) ─────────────────────────────────────
+
+  /// Lista de tags livres (ex: "faculdade", "casa", "saúde").
+  List<String> tags = [];
+
   DateTime createdAt = DateTime.now();
 
   @Index()

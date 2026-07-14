@@ -155,6 +155,35 @@ class TaskCard extends StatelessWidget {
                               ],
                             ],
                           ),
+                          // Tags (Módulo 14)
+                          if (task.tags.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 2,
+                              children: task.tags
+                                  .map((tag) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: theme
+                                              .colorScheme.secondaryContainer,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          tag,
+                                          style: theme.textTheme.labelSmall
+                                              ?.copyWith(
+                                            fontSize: 10,
+                                            color: theme.colorScheme
+                                                .onSecondaryContainer,
+                                          ),
+                                        ),
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
                         ],
                       ),
                     ),

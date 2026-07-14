@@ -178,6 +178,10 @@ class _TaskFormState extends State<TaskForm> {
   late final TextEditingController
       _durationCtrl; // pomodoroStudy (min) / timedExercise (s)
   late final TextEditingController _pointsCtrl;
+  late final TextEditingController _tagCtrl; // Módulo 14
+
+  /// Tags definidas pelo usuário (excluindo o que está sendo digitado).
+  List<String> _tags = [];
 
   TaskType _type = TaskType.generic;
   DateTime? _scheduledDate;
@@ -227,6 +231,7 @@ class _TaskFormState extends State<TaskForm> {
       text: t?.rewardPoints.toString() ??
           AppConstants.defaultRewardPoints.toString(),
     );
+    _tagCtrl = TextEditingController();
 
     _type = TaskType.generic;
     _scheduledDate = DateHelpers.today(); // padrão: hoje
@@ -237,6 +242,7 @@ class _TaskFormState extends State<TaskForm> {
       _scheduledTime = t.scheduledTime;
       _isNotificationEnabled = t.isNotificationEnabled;
       _isImportant = t.isImportant;
+      _tags = List<String>.from(t.tags); // Módulo 14
 
       // Inicializa recorrência a partir da tarefa-modelo (se for modelo)
       if (t.parentRecurringId == null && t.recurrenceRule != null) {
@@ -336,8 +342,77 @@ class _TaskFormState extends State<TaskForm> {
     _setsCtrl.dispose();
     _durationCtrl.dispose();
     _pointsCtrl.dispose();
+    _tagCtrl.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Constrói o campo de entrada de tags com chips editáveis.
+  Widget _buildTagsInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('Tags',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 4),
+        // Chips das tags já adicionadas
+        if (_tags.isNotEmpty) ...[
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: _tags
+                .map((tag) => Chip(
+                      label: Text(tag, style: const TextStyle(fontSize: 12)),
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () => setState(() => _tags.remove(tag)),
+                      visualDensity: VisualDensity.compact,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 4),
+        ],
+        // Campo para adicionar nova tag
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _tagCtrl,
+                decoration: const InputDecoration(
+                  hintText: 'Nova tag…',
+                  isDense: true,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  border: OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.done,
+                onSubmitted: _addTag,
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: () => _addTag(_tagCtrl.text),
+              tooltip: 'Adicionar tag',
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  void _addTag(String value) {
+    final trimmed = value.trim().toLowerCase();
+    if (trimmed.isEmpty) return;
+    if (_tags.contains(trimmed)) {
+      _tagCtrl.clear();
+      return;
+    }
+    setState(() {
+      _tags.add(trimmed);
+      _tagCtrl.clear();
+    });
   }
 
   Future<void> _pickDate() async {
@@ -387,6 +462,9 @@ class _TaskFormState extends State<TaskForm> {
             ? _isNotificationEnabled
             : false;
     task.isImportant = _isImportant && task.isNotificationEnabled;
+
+    // Tags (Módulo 14)
+    task.tags = List<String>.from(_tags);
 
     // Limpa campos irrelevantes para o tipo antes de salvar
     switch (_type) {
@@ -472,6 +550,7 @@ class _TaskFormState extends State<TaskForm> {
               );
           // Atualiza o cache para que o card reflita as subtarefas
           if (_pendingSubtasks.isNotEmpty) {
+            if (!mounted) return;
             unawaited(context
                 .read<TaskController>()
                 .refreshSubtaskCacheForTask(task.id));
@@ -535,6 +614,10 @@ class _TaskFormState extends State<TaskForm> {
               maxLines: 3,
               textCapitalization: TextCapitalization.sentences,
             ),
+            const SizedBox(height: 16),
+
+            // ─── Tags / categorias (Módulo 14) ──────────────
+            _buildTagsInput(),
             const SizedBox(height: 16),
 
             // ─── Tipo ────────────────────────────────────────
