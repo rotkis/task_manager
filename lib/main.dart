@@ -13,8 +13,10 @@ import 'core/utils/permission_helper.dart';
 import 'core/utils/backup_codec.dart';
 import 'data/isar/isar_service.dart';
 import 'data/repositories/backup_repository.dart';
+import 'data/repositories/progress_repository.dart';
 import 'features/notifications/alarm_service.dart';
 import 'features/notifications/notification_service.dart';
+import 'features/notifications/weekly_summary_service.dart';
 import 'features/notifications/widgets/notification_settings_sheet.dart';
 import 'features/calendar/screens/calendar_screen.dart';
 import 'features/stats/screens/stats_screen.dart';
@@ -47,6 +49,13 @@ Future<void> main() async {
   final alarmService = AlarmService();
   await notificationService.init();
   await alarmService.init();
+
+  // Agenda o resumo semanal (domingo 20h)
+  final weeklySummary = WeeklySummaryService(
+    progressRepository: ProgressRepository(),
+    notificationService: notificationService,
+  );
+  await weeklySummary.scheduleNext();
 
   runApp(TaskManagerApp(
     notificationService: notificationService,

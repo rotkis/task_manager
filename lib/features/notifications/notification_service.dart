@@ -105,17 +105,28 @@ notificationId:   $notificationId
 channel:          task_channel
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
 
-    await _plugin!.zonedSchedule(
-      notificationId,
-      task.title,
-      task.description ?? 'Você tem uma tarefa para fazer',
-      tzScheduled,
-      details,
-      androidScheduleMode: AndroidScheduleMode.exact,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: task.id.toString(),
-    );
+    try {
+      await _plugin!.zonedSchedule(
+        notificationId,
+        task.title,
+        task.description ?? 'Você tem uma tarefa para fazer',
+        tzScheduled,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exact,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: task.id.toString(),
+      );
+    } catch (e, stack) {
+      debugPrint('''
+━━━ [NotificationService] zonedSchedule EXCEPTION ━━━
+task.id:       ${task.id}
+task.title:    ${task.title}
+Exception:     $e
+Stack trace:  $stack
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
+      rethrow;
+    }
 
     // ─── Verifica se a notificação foi registrada ────────────
     final pending = await _plugin!.pendingNotificationRequests();
@@ -139,6 +150,47 @@ ${pending.map((r) => '  id=${r.id} title="${r.title}" body="${r.body}"').join('\
         await androidPlugin.requestNotificationsPermission();
       }
     }
+  }
+
+  /// Agenda uma notificação de resumo semanal.
+  ///
+  /// Usa um canal separado (`weekly_summary_channel`) sem botões de ação.
+  /// Cancela qualquer notificação anterior com o mesmo [id] antes de agendar.
+  Future<void> scheduleWeeklySummary(
+    int id,
+    String title,
+    String body,
+    DateTime scheduledDateTime,
+  ) async {
+    if (!_initialized) await init();
+    await requestPermissions();
+    await cancel(id);
+
+    final tzScheduled = tz.TZDateTime.from(scheduledDateTime, tz.local);
+
+    const androidDetails = AndroidNotificationDetails(
+      'weekly_summary_channel',
+      'Resumo Semanal',
+      channelDescription: 'Resumo semanal de tarefas concluídas',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      playSound: true,
+    );
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: DarwinNotificationDetails(),
+    );
+
+    await _plugin!.zonedSchedule(
+      id,
+      title,
+      body,
+      tzScheduled,
+      details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
   }
 
   /// Cancela a notificação com [notificationId].
