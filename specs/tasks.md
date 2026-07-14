@@ -99,25 +99,11 @@ Depende do Módulo 1 (e é alimentado por ele via `progress_repository`).
 
 ---
 
-## Módulo 5 — Compartilhamento por código
-Mais isolado; só depende do modelo `TaskItem` (Módulo 1) para ler/gravar.
-
-- [ ] `core/utils/share_code_codec.dart`: funções `encodeTasks(List<TaskItem>) -> String`
-      e `decodeTasks(String) -> List<TaskItem parcial>`, seguindo o formato
-      definido no `plan.md` (JSON de chaves curtas + Base64 URL-safe).
-- [ ] `data/repositories/share_repository.dart`: `exportSelected(ids)` e
-      `importFromCode(code)` (grava novas `TaskItem` com `syncGroupCode`
-      preenchido).
-- [ ] `features/share/screens/share_screen.dart`: tela com duas abas —
-      "Compartilhar" (selecionar tarefas → gerar código/QR) e "Importar"
-      (colar código ou escanear QR → prévia → confirmar importação).
-- [ ] (Opcional, se der tempo) `qr_flutter` para gerar QR do código e
-      `mobile_scanner` para ler QR na importação.
-- **Critério de aceite**: gerar código de 2-3 tarefas em uma instância do
-  app e importar em outra instância recria as mesmas tarefas com datas
-  relativas corretas, editáveis independentemente depois.
-- **Testes esperados**: unit test de round-trip `encodeTasks` →
-  `decodeTasks` garantindo que os dados voltam idênticos.
+## [REMOVIDO] Módulo 5 — Compartilhamento por código
+Foi implementado e depois removido do projeto por decisão de produto
+(custo de manutenção vs. uso real esperado). Ver nota em `spec.md`
+seção 5.7. O Backup e restauração (`tasks_v2.md`, Módulo 9) cobre o
+caso de uso de levar tarefas pra outro aparelho.
 
 ---
 

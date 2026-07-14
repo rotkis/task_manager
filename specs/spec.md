@@ -83,19 +83,14 @@ usuários.
 - Atribuir/mudar a data e horário de uma tarefa direto pelo calendário
   (drag ou seleção + edição).
 
-### 5.7 Compartilhar tarefas via código
-- Gerar um código (string curta, ex: 6-8 caracteres) que representa um
-  "pacote" de tarefas (título, tipo, parâmetros, dia/horário relativo ou
-  absoluto) do usuário atual.
-- Outro usuário insere o código e importa essas tarefas para o próprio
-  banco Isar local — sem servidor contínuo, apenas troca do código em si
-  (o texto/payload precisa estar embutido ou recuperável a partir do
-  código; ver seção 7 sobre decisão técnica pendente).
-- Após importar, o usuário pode alterar livremente dia/horário/parâmetros
-  da sua cópia, sem afetar a tarefa original de quem compartilhou.
-- Tarefas vindas do mesmo código compartilham `syncGroupCode` só para fins
-  de rastreio/agrupamento visual (ex: "importado do grupo XYZ123"), não é
-  uma sincronização ativa.
+### 5.7 [REMOVIDO] Compartilhar tarefas via código
+Essa feature foi implementada (v1) e depois **removida por decisão de
+produto**: o custo de manutenção (bugs de determinismo de hash,
+reatividade, agendamento de notificação) não compensava o uso real
+esperado, já que o app é de uso pessoal/poucos usuários. O campo
+`syncGroupCode` foi removido do `TaskItem`. O Backup e restauração
+(Módulo 9, ver `tasks_v2.md`) cobre o caso de uso real de "levar minhas
+tarefas pra outro aparelho".
 
 ### 5.8 Temas
 - Light theme: fundo branco levemente amarelado (`#FFF8E7`), texto marrom
@@ -107,7 +102,9 @@ usuários.
 ## 6. Modelo de dados (Isar)
 - **TaskItem**: id, title, description, type (enum), scheduledDate,
   scheduledTime, durationMinutes, targetReps, isCompleted, completedAt,
-  rewardPoints, notificationId, syncGroupCode, createdAt.
+  rewardPoints, notificationId, createdAt. (campos adicionados depois:
+  recurrenceRule, parentRecurringId, postponeCount, tags — ver
+  `spec_v2.md`/`plan_v2.md`)
 - **ProgressLog**: id, day (único por dia), tasksCompleted, pointsEarned,
   currentStreak.
 
