@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../../core/utils/permission_helper.dart';
+import '../../../core/utils/date_helpers.dart';
+import '../../../data/repositories/progress_repository.dart';
 import '../notification_service.dart';
+import '../weekly_summary_service.dart';
 
 /// Bottom sheet com o estado das permissões de notificação e alarme, botões
 /// para ativar cada uma, botão de teste e aviso específico para MIUI.
@@ -36,6 +39,7 @@ class _NotificationSettingsSheetState extends State<NotificationSettingsSheet> {
   final _notificationService = NotificationService();
   bool _loading = true;
   bool _schedulingTest = false;
+  bool _testingSummary = false;
 
   bool _notifGranted = false;
   bool _exactAlarmGranted = false;
@@ -127,6 +131,87 @@ OBS: se exactAlarmGranted=true mas o app NÃO aparece em
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Notificação de teste enviada!')),
     );
+  }
+
+  // ─── Testar resumo semanal ─────────────────────────────────────────
+
+  Future<void> _testWeeklySummary() async {
+    setState(() => _testingSummary = true);
+    try {
+      final repo = ProgressRepository();
+      final now = DateTime.now();
+      final today = DateHelpers.normalizeToDay(now);
+      final weekday = now.weekday;
+
+      // Segunda desta semana
+      final thisMonday =
+          today.subtract(Duration(days: weekday - DateTime.monday));
+      // Domingo desta semana
+      final thisSunday = thisMonday.add(const Duration(days: 6));
+      // Semana anterior
+      final lastMonday = thisMonday.subtract(const Duration(days: 7));
+      final lastSunday = thisSunday.subtract(const Duration(days: 7));
+
+      // Busca dados (one-shot)
+      final thisWeekLogs = await repo.watchRange(thisMonday, thisSunday).first;
+      final lastWeekLogs = await repo.watchRange(lastMonday, lastSunday).first;
+
+      final summary = WeeklySummaryService.computeSummary(
+        thisWeekLogs,
+        lastWeekLogs,
+      );
+
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('📊 Resumo Semanal (teste)'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(summary.formatBody()),
+                const SizedBox(height: 16),
+                Text(
+                  'Período: ${thisMonday.day}/${thisMonday.month} '
+                  'a ${thisSunday.day}/${thisSunday.month}',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.5),
+                      ),
+                ),
+                Text(
+                  'vs semana anterior: ${lastMonday.day}/${lastMonday.month} '
+                  'a ${lastSunday.day}/${lastSunday.month}',
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx)
+                            .colorScheme
+                            .onSurface
+                            .withValues(alpha: 0.5),
+                      ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Fechar'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao calcular resumo: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _testingSummary = false);
+    }
   }
 
   // ─── UI ────────────────────────────────────────────────────────────
@@ -274,6 +359,18 @@ OBS: se exactAlarmGranted=true mas o app NÃO aparece em
                     : const Icon(Icons.schedule),
                 label: const Text('Agendar teste em 30s'),
                 onPressed: _schedulingTest ? null : _scheduleDebugTest,
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                icon: _testingSummary
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.analytics_outlined),
+                label: const Text('Testar resumo semanal agora'),
+                onPressed: _testingSummary ? null : _testWeeklySummary,
               ),
               const SizedBox(height: 24),
 

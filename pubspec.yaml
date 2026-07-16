@@ -36,6 +36,9 @@ dependencies:
   share_plus: ^10.0.0
   file_picker: ^8.0.0
 
+  # Widget de tela inicial (Android)
+  home_widget: ^0.7.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

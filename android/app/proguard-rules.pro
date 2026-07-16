@@ -19,3 +19,10 @@
 -keep class com.dexterous.flutterlocalnotifications.** { *; }
 -keep class com.dexterous.flutterlocalnotifications.models.** { *; }
 -keepclassmembers class com.dexterous.flutterlocalnotifications.** { *; }
+
+# ─── Home screen widgets (Módulo 12) ─────────────────────────────────
+# R8 remove AppWidgetProviders não referenciados pelo Dart, causando
+# "can't load widget" em release (especialmente MIUI/HyperOS).
+-keep class com.rotkis.task_manager.TaskWidgetProvider { *; }
+-keep class com.rotkis.task_manager.CalendarWidgetProvider { *; }
+-keep class com.rotkis.task_manager.CalendarWidgetNavReceiver { *; }

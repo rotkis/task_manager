@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#1E1E2E"
+    android:padding="4dp">
+
+    <!-- Cabeçalho com navegação de mês -->
+    <LinearLayout
+        android:id="@+id/header_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="4dp"
+        android:paddingHorizontal="2dp">
+
+        <!-- Botão mês anterior -->
+        <TextView
+            android:id="@+id/btn_prev_month"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="◀"
+            android:textSize="18sp"
+            android:textColor="#CDD6F4"
+            android:gravity="center"
+            android:background="@android:color/transparent"
+            android:contentDescription="Mês anterior"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Título do mês (tocável: abre o app) -->
+        <TextView
+            android:id="@+id/tv_calendar_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#CDD6F4"
+            android:text="Julho 2026"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Botão próximo mês -->
+        <TextView
+            android:id="@+id/btn_next_month"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:text="▶"
+            android:textSize="18sp"
+            android:textColor="#CDD6F4"
+            android:gravity="center"
+            android:background="@android:color/transparent"
+            android:contentDescription="Próximo mês"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+    <!-- Imagem do calendário renderizada (offscreen PNG) -->
+    <ImageView
+        android:id="@+id/iv_calendar"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scaleType="fitCenter"
+        android:contentDescription="Calendário do mês" />
+
+</LinearLayout>
