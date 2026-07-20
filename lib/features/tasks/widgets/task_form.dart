@@ -189,6 +189,9 @@ class _TaskFormState extends State<TaskForm> {
   bool _isNotificationEnabled = true;
   bool _isImportant = false;
 
+  /// Intervalo de repetição do lembrete em minutos (null = sem repetição).
+  int? _reminderRepeatMinutes;
+
   // ─── Recorrência ────────────────────────────────────────────────────
 
   /// Tipo de recorrência selecionado.
@@ -242,6 +245,7 @@ class _TaskFormState extends State<TaskForm> {
       _scheduledTime = t.scheduledTime;
       _isNotificationEnabled = t.isNotificationEnabled;
       _isImportant = t.isImportant;
+      _reminderRepeatMinutes = t.reminderRepeatMinutes;
       _tags = List<String>.from(t.tags); // Módulo 14
 
       // Inicializa recorrência a partir da tarefa-modelo (se for modelo)
@@ -462,6 +466,8 @@ class _TaskFormState extends State<TaskForm> {
             ? _isNotificationEnabled
             : false;
     task.isImportant = _isImportant && task.isNotificationEnabled;
+    task.reminderRepeatMinutes =
+        task.isNotificationEnabled ? _reminderRepeatMinutes : null;
 
     // Tags (Módulo 14)
     task.tags = List<String>.from(_tags);
@@ -784,6 +790,53 @@ class _TaskFormState extends State<TaskForm> {
                   ? (v) => setState(() => _isImportant = v)
                   : null,
             ),
+
+            // ─── Repetir lembrete ───────────────────────────
+            // Só aparece se "Notificar" estiver ativado
+            if (_isNotificationEnabled &&
+                _scheduledDate != null &&
+                _scheduledTime != null) ...[
+              SwitchListTile(
+                title: const Text('Repetir lembrete'),
+                subtitle: const Text(
+                    'Enviar várias notificações em intervalos regulares'),
+                value: _reminderRepeatMinutes != null,
+                onChanged: (v) => setState(() {
+                  if (v) {
+                    _reminderRepeatMinutes = 15; // padrão
+                  } else {
+                    _reminderRepeatMinutes = null;
+                  }
+                }),
+              ),
+              if (_reminderRepeatMinutes != null)
+                Padding(
+                  padding:
+                      const EdgeInsets.only(left: 64, right: 16, bottom: 8),
+                  child: TextFormField(
+                    initialValue: _reminderRepeatMinutes.toString(),
+                    decoration: const InputDecoration(
+                      labelText: 'A cada quantos minutos?',
+                      helperText:
+                          'Mínimo: 1. As notificações serão repetidas até o fim do dia.',
+                      isDense: true,
+                      counterText: '',
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (v) {
+                      final n = int.tryParse(v ?? '');
+                      if (n == null || n < 1) return 'Valor mínimo: 1';
+                      return null;
+                    },
+                    onChanged: (v) {
+                      final n = int.tryParse(v);
+                      if (n != null && n >= 1) {
+                        setState(() => _reminderRepeatMinutes = n);
+                      }
+                    },
+                  ),
+                ),
+            ],
             const Divider(height: 24),
 
             // ─── Recorrência ──────────────────────────────────

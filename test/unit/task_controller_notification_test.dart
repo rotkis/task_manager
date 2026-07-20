@@ -33,6 +33,15 @@ class NotificationServiceSpy extends NotificationService {
     calls.add('cancel');
     lastCancelledId = notificationId;
   }
+
+  @override
+  Future<void> cancelSeries(TaskItem task) async {
+    calls.add('cancelSeries');
+    // A implementação real chamaria cancel() para cada ID da série.
+    // O spy apenas registra e guarda o primeiro ID como referência.
+    final ids = NotificationService.notificationIdsForTask(task);
+    if (ids.isNotEmpty) lastCancelledId = ids.first;
+  }
 }
 
 /// Spy que registra chamadas ao [AlarmService] sem usar plugins reais.
@@ -160,7 +169,7 @@ void main() {
       await controller.updateTask(task);
 
       // Deve ter cancelado a antiga e agendado a nova
-      expect(notificationSpy.calls, ['cancel', 'schedule']);
+      expect(notificationSpy.calls, ['cancelSeries', 'schedule']);
       expect(notificationSpy.lastCancelledId, task.id);
       expect(notificationSpy.lastScheduled?.id, task.id);
     });
@@ -189,7 +198,7 @@ void main() {
 
       await controller.deleteTask(task.id);
 
-      expect(notificationSpy.calls, contains('cancel'));
+      expect(notificationSpy.calls, contains('cancelSeries'));
       // Verifica que a tarefa foi removida
       final deleted = await taskRepo.getById(task.id);
       expect(deleted, isNull);
@@ -215,7 +224,7 @@ void main() {
 
       await controller.completeTask(task.id);
 
-      expect(notificationSpy.calls, contains('cancel'));
+      expect(notificationSpy.calls, contains('cancelSeries'));
     });
 
     test('completeTask cancela alarme para tarefa importante', () async {

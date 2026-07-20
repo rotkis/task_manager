@@ -8,6 +8,11 @@ void main() {
   late IsarTestHelper helper;
   late TaskRepository repo;
 
+  // Data de referência fixa: segunda-feira, 20 de julho de 2026.
+  // Usar uma data fixa em vez de DateTime.now() evita flakiness
+  // quando os testes são executados em dias com semana diferentes.
+  final kToday = DateTime(2026, 7, 20);
+
   setUp(() async {
     helper = IsarTestHelper();
     await helper.open();
@@ -26,18 +31,21 @@ void main() {
         ..type = TaskType.generic
         ..rewardPoints = 10
         ..recurrenceRule = 'daily'
-        ..scheduledDate = DateTime.now();
+        ..scheduledDate = kToday;
       await repo.create(model);
 
       // Gera instâncias
-      await repo.ensureUpcomingInstances(daysAhead: 30);
+      await repo.ensureUpcomingInstances(
+        daysAhead: 30,
+        referenceDate: kToday,
+      );
 
       // Verifica que foram criadas instâncias para os próximos 30 dias
       // (o dia do modelo não é duplicado como instância)
       final instances = await repo.getInstancesInRange(
         model.id,
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().add(const Duration(days: 31)),
+        kToday.subtract(const Duration(days: 1)),
+        kToday.add(const Duration(days: 31)),
       );
       expect(instances.length, 30); // 30 dias futuros (modelo já cobre hoje)
 
@@ -55,48 +63,60 @@ void main() {
         ..type = TaskType.generic
         ..rewardPoints = 10
         ..recurrenceRule = 'daily'
-        ..scheduledDate = DateTime.now();
+        ..scheduledDate = kToday;
       await repo.create(model);
 
       // Primeira geração
-      await repo.ensureUpcomingInstances(daysAhead: 5);
+      await repo.ensureUpcomingInstances(
+        daysAhead: 5,
+        referenceDate: kToday,
+      );
       final firstGen = await repo.getInstancesInRange(
         model.id,
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().add(const Duration(days: 6)),
+        kToday.subtract(const Duration(days: 1)),
+        kToday.add(const Duration(days: 6)),
       );
       expect(firstGen.length, 5); // 5 dias futuros (modelo já cobre hoje)
 
       // Segunda geração (mesmo período)
-      await repo.ensureUpcomingInstances(daysAhead: 5);
+      await repo.ensureUpcomingInstances(
+        daysAhead: 5,
+        referenceDate: kToday,
+      );
       final secondGen = await repo.getInstancesInRange(
         model.id,
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().add(const Duration(days: 6)),
+        kToday.subtract(const Duration(days: 1)),
+        kToday.add(const Duration(days: 6)),
       );
       expect(secondGen.length, 5); // ainda 5, sem duplicatas
     });
 
     test('cria instâncias semanais nos dias corretos', () async {
       // Segunda(1), Quarta(3), Sexta(5)
+      // kToday = 2026-07-20 (Monday)
       final model = TaskItem()
         ..title = 'Estudar'
         ..type = TaskType.generic
         ..rewardPoints = 10
         ..recurrenceRule = 'weekly:MO,WE,FR'
-        ..scheduledDate = DateTime(2026, 7, 13); // Monday
+        ..scheduledDate = kToday; // Monday
       await repo.create(model);
 
-      // Gera instâncias para 2 semanas
-      await repo.ensureUpcomingInstances(daysAhead: 13);
-
-      final instances = await repo.getInstancesInRange(
-        model.id,
-        DateTime(2026, 7, 13),
-        DateTime(2026, 7, 26),
+      // Gera instâncias
+      await repo.ensureUpcomingInstances(
+        daysAhead: 13,
+        referenceDate: kToday,
       );
 
-      // Modelo está em 13 Jul (Mon). Instâncias: 15(Wed)+17(Fri)+20(Mon)+22(Wed)+24(Fri) = 5
+      // Intervalo: do dia do modelo até 14 dias depois
+      final instances = await repo.getInstancesInRange(
+        model.id,
+        kToday,
+        kToday.add(const Duration(days: 14)),
+      );
+
+      // kToday(Mon,modelo) + 22(Wed) + 24(Fri) + 27(Mon) + 29(Wed) + 31(Fri) = 6 datas
+      // Modelo excluído → 5 instâncias (22, 24, 27, 29, 31)
       expect(instances.length, 5);
       for (final inst in instances) {
         final wd = inst.scheduledDate!.weekday;
@@ -105,23 +125,27 @@ void main() {
     });
 
     test('cria instâncias com every:N no intervalo correto', () async {
+      // kToday = 2026-07-20. every:2 gera 22, 24, 26, 28, 30...
       final model = TaskItem()
         ..title = 'Correr'
         ..type = TaskType.generic
         ..rewardPoints = 10
         ..recurrenceRule = 'every:2'
-        ..scheduledDate = DateTime(2026, 7, 13); // Monday
+        ..scheduledDate = kToday;
       await repo.create(model);
 
-      await repo.ensureUpcomingInstances(daysAhead: 8);
+      await repo.ensureUpcomingInstances(
+        daysAhead: 8,
+        referenceDate: kToday,
+      );
 
       final instances = await repo.getInstancesInRange(
         model.id,
-        DateTime(2026, 7, 13),
-        DateTime(2026, 7, 21),
+        kToday,
+        kToday.add(const Duration(days: 9)),
       );
 
-      // 15, 17, 19, 21 = 4 instâncias (13 é a data do modelo, não duplica)
+      // kToday(modelo) + 22, 24, 26, 28 = 5 datas; modelo excluído → 4 instâncias
       expect(instances.length, 4);
     });
 
@@ -131,21 +155,21 @@ void main() {
         ..title = 'Recorrente'
         ..type = TaskType.generic
         ..recurrenceRule = 'daily'
-        ..scheduledDate = DateTime.now();
+        ..scheduledDate = kToday;
       await repo.create(model);
 
       // Cria uma tarefa sem recorrência
       await repo.create(TaskItem()
         ..title = 'Avulsa'
         ..type = TaskType.generic
-        ..scheduledDate = DateTime.now());
+        ..scheduledDate = kToday);
 
       // Cria uma instância (não deve aparecer como modelo)
       final instance = TaskItem()
         ..title = 'Instância'
         ..type = TaskType.generic
         ..parentRecurringId = model.id
-        ..scheduledDate = DateTime.now();
+        ..scheduledDate = kToday;
       await repo.create(instance);
 
       final models = await repo.getModelTasks();
@@ -158,15 +182,18 @@ void main() {
         ..title = 'Sem regra'
         ..type = TaskType.generic
         ..rewardPoints = 10
-        ..scheduledDate = DateTime.now();
+        ..scheduledDate = kToday;
       await repo.create(model);
 
-      await repo.ensureUpcomingInstances(daysAhead: 5);
+      await repo.ensureUpcomingInstances(
+        daysAhead: 5,
+        referenceDate: kToday,
+      );
 
       final instances = await repo.getInstancesInRange(
         model.id,
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().add(const Duration(days: 6)),
+        kToday.subtract(const Duration(days: 1)),
+        kToday.add(const Duration(days: 6)),
       );
       expect(instances, isEmpty);
     });
@@ -179,7 +206,7 @@ void main() {
         ..type = TaskType.generic
         ..rewardPoints = 10
         ..recurrenceRule = 'daily'
-        ..scheduledDate = DateTime.now();
+        ..scheduledDate = kToday;
       await repo.create(model);
 
       // Adiciona 2 subtarefas ao modelo
@@ -193,13 +220,16 @@ void main() {
         ..order = 1);
 
       // Gera instâncias
-      await repo.ensureUpcomingInstances(daysAhead: 3);
+      await repo.ensureUpcomingInstances(
+        daysAhead: 3,
+        referenceDate: kToday,
+      );
 
       // Verifica instâncias
       final instances = await repo.getInstancesInRange(
         model.id,
-        DateTime.now().subtract(const Duration(days: 1)),
-        DateTime.now().add(const Duration(days: 4)),
+        kToday.subtract(const Duration(days: 1)),
+        kToday.add(const Duration(days: 4)),
       );
       expect(instances.length, 3);
 

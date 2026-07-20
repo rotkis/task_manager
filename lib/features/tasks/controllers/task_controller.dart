@@ -324,9 +324,13 @@ class TaskController extends ChangeNotifier {
   }
 
   /// Cancela notificação e alarme associados a [task], se existirem.
+  ///
+  /// Para notificações, usa [NotificationService.cancelSeries] que cancela
+  /// TODAS as notificações da série (incluindo repetições) usando o padrão
+  /// determinístico de IDs baseado em [TaskItem.reminderRepeatMinutes].
   Future<void> _cancelNotificationAndAlarm(TaskItem task) async {
     if (task.notificationId != null) {
-      await _notificationService.cancel(task.notificationId!);
+      await _notificationService.cancelSeries(task);
     }
     if (task.alarmId != null) {
       await _alarmService.cancel(task.alarmId!);

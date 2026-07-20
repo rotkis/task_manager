@@ -110,18 +110,24 @@ class TaskRepository {
   }
 
   /// Garante que existam instâncias concretas da tarefa-modelo [model]
-  /// para os próximos [daysAhead] dias (a partir de hoje).
+  /// para os próximos [daysAhead] dias (a partir de [referenceDate] ou
+  /// de hoje se [referenceDate] for null).
+  ///
+  /// [referenceDate] permite injetar uma data fixa em testes, evitando
+  /// flakiness (mesmo padrão usado em isOverdue).
   ///
   /// Cria apenas as que **não** existirem ainda, evitando duplicatas.
   /// As instâncias copiam título, descrição, tipo, duração, pontos etc.
   /// da tarefa-modelo, mas têm [parentRecurringId] apontando para ela e
   /// [recurrenceRule] = null (cada instância é independente).
   Future<void> ensureInstancesForModel(TaskItem model,
-      {int daysAhead = 30}) async {
+      {int daysAhead = 30, DateTime? referenceDate}) async {
     final rule = parseRecurrenceRule(model.recurrenceRule);
     if (rule.type == RecurrenceType.none) return;
 
-    final today = DateHelpers.today();
+    final today = referenceDate != null
+        ? DateHelpers.normalizeToDay(referenceDate)
+        : DateHelpers.today();
     final endDate = today.add(Duration(days: daysAhead));
 
     // Gera todas as datas em que a tarefa deve ocorrer
@@ -188,10 +194,14 @@ class TaskRepository {
 
   /// Varre todas as tarefas-modelo e chama [ensureInstancesForModel] para
   /// cada uma. Geralmente chamado uma vez ao abrir o app.
-  Future<void> ensureUpcomingInstances({int daysAhead = 30}) async {
+  ///
+  /// Se [referenceDate] for fornecido, usa-o como "hoje" (útil em testes).
+  Future<void> ensureUpcomingInstances(
+      {int daysAhead = 30, DateTime? referenceDate}) async {
     final models = await getModelTasks();
     for (final model in models) {
-      await ensureInstancesForModel(model, daysAhead: daysAhead);
+      await ensureInstancesForModel(model,
+          daysAhead: daysAhead, referenceDate: referenceDate);
     }
   }
 

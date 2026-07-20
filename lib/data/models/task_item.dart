@@ -46,6 +46,10 @@ class TaskItem {
   /// notificação simples. Ver plan.md seção 2.1.
   bool isImportant = false;
 
+  /// Intervalo em minutos para repetir a notificação/lembrete.
+  /// Se nulo ou 0, apenas uma notificação é enviada (comportamento atual).
+  int? reminderRepeatMinutes;
+
   // Recompensa
   int rewardPoints = 10;
 

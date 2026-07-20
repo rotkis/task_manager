@@ -92,43 +92,48 @@ const TaskItemSchema = CollectionSchema(
       name: r'recurrenceRule',
       type: IsarType.string,
     ),
-    r'rewardPoints': PropertySchema(
+    r'reminderRepeatMinutes': PropertySchema(
       id: 15,
+      name: r'reminderRepeatMinutes',
+      type: IsarType.long,
+    ),
+    r'rewardPoints': PropertySchema(
+      id: 16,
       name: r'rewardPoints',
       type: IsarType.long,
     ),
     r'scheduledDate': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'scheduledDate',
       type: IsarType.dateTime,
     ),
     r'scheduledTime': PropertySchema(
-      id: 17,
+      id: 18,
       name: r'scheduledTime',
       type: IsarType.dateTime,
     ),
     r'tags': PropertySchema(
-      id: 18,
+      id: 19,
       name: r'tags',
       type: IsarType.stringList,
     ),
     r'targetReps': PropertySchema(
-      id: 19,
+      id: 20,
       name: r'targetReps',
       type: IsarType.long,
     ),
     r'targetSets': PropertySchema(
-      id: 20,
+      id: 21,
       name: r'targetSets',
       type: IsarType.long,
     ),
     r'title': PropertySchema(
-      id: 21,
+      id: 22,
       name: r'title',
       type: IsarType.string,
     ),
     r'type': PropertySchema(
-      id: 22,
+      id: 23,
       name: r'type',
       type: IsarType.byte,
       enumMap: _TaskItemtypeEnumValueMap,
@@ -212,14 +217,15 @@ void _taskItemSerialize(
   writer.writeLong(offsets[12], object.parentRecurringId);
   writer.writeLong(offsets[13], object.postponeCount);
   writer.writeString(offsets[14], object.recurrenceRule);
-  writer.writeLong(offsets[15], object.rewardPoints);
-  writer.writeDateTime(offsets[16], object.scheduledDate);
-  writer.writeDateTime(offsets[17], object.scheduledTime);
-  writer.writeStringList(offsets[18], object.tags);
-  writer.writeLong(offsets[19], object.targetReps);
-  writer.writeLong(offsets[20], object.targetSets);
-  writer.writeString(offsets[21], object.title);
-  writer.writeByte(offsets[22], object.type.index);
+  writer.writeLong(offsets[15], object.reminderRepeatMinutes);
+  writer.writeLong(offsets[16], object.rewardPoints);
+  writer.writeDateTime(offsets[17], object.scheduledDate);
+  writer.writeDateTime(offsets[18], object.scheduledTime);
+  writer.writeStringList(offsets[19], object.tags);
+  writer.writeLong(offsets[20], object.targetReps);
+  writer.writeLong(offsets[21], object.targetSets);
+  writer.writeString(offsets[22], object.title);
+  writer.writeByte(offsets[23], object.type.index);
 }
 
 TaskItem _taskItemDeserialize(
@@ -243,14 +249,15 @@ TaskItem _taskItemDeserialize(
   object.parentRecurringId = reader.readLongOrNull(offsets[12]);
   object.postponeCount = reader.readLong(offsets[13]);
   object.recurrenceRule = reader.readStringOrNull(offsets[14]);
-  object.rewardPoints = reader.readLong(offsets[15]);
-  object.scheduledDate = reader.readDateTimeOrNull(offsets[16]);
-  object.scheduledTime = reader.readDateTimeOrNull(offsets[17]);
-  object.tags = reader.readStringList(offsets[18]) ?? [];
-  object.targetReps = reader.readLongOrNull(offsets[19]);
-  object.targetSets = reader.readLongOrNull(offsets[20]);
-  object.title = reader.readString(offsets[21]);
-  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[22])] ??
+  object.reminderRepeatMinutes = reader.readLongOrNull(offsets[15]);
+  object.rewardPoints = reader.readLong(offsets[16]);
+  object.scheduledDate = reader.readDateTimeOrNull(offsets[17]);
+  object.scheduledTime = reader.readDateTimeOrNull(offsets[18]);
+  object.tags = reader.readStringList(offsets[19]) ?? [];
+  object.targetReps = reader.readLongOrNull(offsets[20]);
+  object.targetSets = reader.readLongOrNull(offsets[21]);
+  object.title = reader.readString(offsets[22]);
+  object.type = _TaskItemtypeValueEnumMap[reader.readByteOrNull(offsets[23])] ??
       TaskType.generic;
   return object;
 }
@@ -293,20 +300,22 @@ P _taskItemDeserializeProp<P>(
     case 14:
       return (reader.readStringOrNull(offset)) as P;
     case 15:
-      return (reader.readLong(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 16:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 17:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 18:
-      return (reader.readStringList(offset) ?? []) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 19:
-      return (reader.readLongOrNull(offset)) as P;
+      return (reader.readStringList(offset) ?? []) as P;
     case 20:
       return (reader.readLongOrNull(offset)) as P;
     case 21:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 22:
+      return (reader.readString(offset)) as P;
+    case 23:
       return (_TaskItemtypeValueEnumMap[reader.readByteOrNull(offset)] ??
           TaskType.generic) as P;
     default:
@@ -1509,6 +1518,80 @@ extension TaskItemQueryFilter
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      reminderRepeatMinutesIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'reminderRepeatMinutes',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      reminderRepeatMinutesIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'reminderRepeatMinutes',
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      reminderRepeatMinutesEqualTo(int? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'reminderRepeatMinutes',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      reminderRepeatMinutesGreaterThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'reminderRepeatMinutes',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      reminderRepeatMinutesLessThan(
+    int? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'reminderRepeatMinutes',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition>
+      reminderRepeatMinutesBetween(
+    int? lower,
+    int? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'reminderRepeatMinutes',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterFilterCondition> rewardPointsEqualTo(
       int value) {
     return QueryBuilder.apply(this, (query) {
@@ -2436,6 +2519,19 @@ extension TaskItemQuerySortBy on QueryBuilder<TaskItem, TaskItem, QSortBy> {
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByReminderRepeatMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderRepeatMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy>
+      sortByReminderRepeatMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderRepeatMinutes', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> sortByRewardPoints() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rewardPoints', Sort.asc);
@@ -2717,6 +2813,19 @@ extension TaskItemQuerySortThenBy
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByReminderRepeatMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderRepeatMinutes', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TaskItem, TaskItem, QAfterSortBy>
+      thenByReminderRepeatMinutesDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'reminderRepeatMinutes', Sort.desc);
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QAfterSortBy> thenByRewardPoints() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'rewardPoints', Sort.asc);
@@ -2898,6 +3007,13 @@ extension TaskItemQueryWhereDistinct
     });
   }
 
+  QueryBuilder<TaskItem, TaskItem, QDistinct>
+      distinctByReminderRepeatMinutes() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'reminderRepeatMinutes');
+    });
+  }
+
   QueryBuilder<TaskItem, TaskItem, QDistinct> distinctByRewardPoints() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'rewardPoints');
@@ -3045,6 +3161,13 @@ extension TaskItemQueryProperty
   QueryBuilder<TaskItem, String?, QQueryOperations> recurrenceRuleProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'recurrenceRule');
+    });
+  }
+
+  QueryBuilder<TaskItem, int?, QQueryOperations>
+      reminderRepeatMinutesProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'reminderRepeatMinutes');
     });
   }
 

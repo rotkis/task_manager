@@ -7,8 +7,9 @@ import '../../data/repositories/background_notification_handler.dart';
 
 /// Wrapper do pacote `flutter_local_notifications`.
 ///
-/// Usado para tarefas **não importantes** — dispara uma notificação simples
-/// no horário agendado.
+/// Usado para tarefas **não importantes** — dispara notificações simples
+/// no horário agendado (e opcionalmente em série se a tarefa tiver
+/// [TaskItem.reminderRepeatMinutes] preenchido).
 class NotificationService {
   FlutterLocalNotificationsPlugin? _plugin;
   bool _initialized = false;
@@ -35,17 +36,46 @@ class NotificationService {
     _initialized = true;
   }
 
-  /// Agenda uma notificação para o horário definido em [task].
+  /// Calcula quantas notificações devem ser agendadas para uma tarefa
+  /// com repetição de [intervalMinutes] minutos a partir de
+  /// [scheduledDateTime].
   ///
-  /// Usa o [TaskItem.id] como identificador da notificação. Se a tarefa já
-  /// possuir um `notificationId`, a notificação anterior é cancelada antes.
-  Future<void> schedule(TaskItem task) async {
-    if (!_initialized) await init();
-    if (task.scheduledDate == null || task.scheduledTime == null) return;
+  /// Respeita o teto de até o fim do dia da tarefa (23:59).
+  /// O número mínimo é 1 (pelo menos a notificação inicial).
+  /// O teto de segurança é 96 (24 horas a cada 15 min, suficiente para
+  /// qualquer intervalo praticável).
+  @visibleForTesting
+  static int repeatCount(int intervalMinutes, DateTime scheduledDateTime) {
+    if (intervalMinutes <= 0) return 1;
+    final endOfDay = DateTime(
+      scheduledDateTime.year,
+      scheduledDateTime.month,
+      scheduledDateTime.day,
+      23,
+      59,
+    );
+    final totalMinutes = endOfDay.difference(scheduledDateTime).inMinutes;
+    if (totalMinutes <= 0) return 1;
+    final count = (totalMinutes / intervalMinutes).ceil();
+    return count.clamp(1, 96);
+  }
 
-    // Solicita permissão na primeira vez que agenda
-    await requestPermissions();
-
+  /// Retorna a lista de IDs de notificação para a série de [task].
+  ///
+  /// Se [reminderRepeatMinutes] não estiver preenchido, retorna uma lista
+  /// com um único elemento (`task.id`), mantendo o comportamento atual.
+  ///
+  /// Quando há repetição, os IDs seguem o padrão `task.id * 1000 + i`,
+  /// onde `i` é o índice da repetição (0 = primeira notificação).
+  /// Isso garante que cada notificação da série tenha um ID único e
+  /// deterministicamente recalculável para cancelamento em lote.
+  @visibleForTesting
+  static List<int> notificationIdsForTask(TaskItem task) {
+    final interval = task.reminderRepeatMinutes;
+    if (interval == null || interval <= 0) return [task.id];
+    if (task.scheduledDate == null || task.scheduledTime == null) {
+      return [task.id];
+    }
     final scheduledDateTime = DateTime(
       task.scheduledDate!.year,
       task.scheduledDate!.month,
@@ -53,82 +83,116 @@ class NotificationService {
       task.scheduledTime!.hour,
       task.scheduledTime!.minute,
     );
+    final count = repeatCount(interval, scheduledDateTime);
+    return List.generate(count, (i) => task.id * 1000 + i);
+  }
 
-    // Cancela notificação anterior se existir
-    if (task.notificationId != null) {
-      await cancel(task.notificationId!);
-    }
+  /// Agenda notificação(ões) para [task].
+  ///
+  /// Se [TaskItem.reminderRepeatMinutes] estiver preenchido, agendA uma
+  /// SÉRIE de notificações espaçadas pelo intervalo escolhido, do horário
+  /// da tarefa até o fim do dia (23:59).  Cada notificação usa um
+  /// [notificationId] derivado de [task.id] para não colidir com outras
+  /// tarefas.
+  ///
+  /// Cancela qualquer notificação anterior da mesma tarefa antes de
+  /// agendar (via [cancelSeries]).
+  Future<void> schedule(TaskItem task) async {
+    if (!_initialized) await init();
+    if (task.scheduledDate == null || task.scheduledTime == null) return;
 
-    final notificationId = task.id;
-    task.notificationId = notificationId;
+    // Solicita permissão na primeira vez que agenda
+    await requestPermissions();
 
-    final actionButtons = [
-      const AndroidNotificationAction(
-        'COMPLETE_TASK',
-        'Concluir',
-        cancelNotification: true,
-        showsUserInterface: false,
-      ),
-    ];
-    final androidDetails = AndroidNotificationDetails(
-      'task_channel',
-      'Task Reminders',
-      channelDescription: 'Notifications for scheduled tasks',
-      importance: Importance.high,
-      priority: Priority.high,
-      playSound: true,
-      enableVibration: true,
-      fullScreenIntent: true,
-      actions: actionButtons,
-    );
-    const iosDetails = DarwinNotificationDetails();
-    final details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
+    final baseDateTime = DateTime(
+      task.scheduledDate!.year,
+      task.scheduledDate!.month,
+      task.scheduledDate!.day,
+      task.scheduledTime!.hour,
+      task.scheduledTime!.minute,
     );
 
-    // ─── Log de depuração ─────────────────────────────────────────
-    final tzScheduled = tz.TZDateTime.from(scheduledDateTime, tz.local);
-    debugPrint('''
-━━━ [NotificationService] schedule() ━━━
+    // Cancela notificações anteriores antes de agendar as novas
+    await cancelSeries(task);
+
+    final ids = notificationIdsForTask(task);
+    final interval = task.reminderRepeatMinutes ?? 0;
+
+    for (int i = 0; i < ids.length; i++) {
+      final notificationId = ids[i];
+      final scheduledDateTime =
+          baseDateTime.add(Duration(minutes: interval * i));
+
+      final isRepeat = i > 0;
+      final body = isRepeat
+          ? '${task.description ?? 'Você tem uma tarefa para fazer'} (repetição)'
+          : (task.description ?? 'Você tem uma tarefa para fazer');
+
+      final actionButtons = [
+        const AndroidNotificationAction(
+          'COMPLETE_TASK',
+          'Concluir',
+          cancelNotification: true,
+          showsUserInterface: false,
+        ),
+      ];
+      final androidDetails = AndroidNotificationDetails(
+        'task_channel',
+        'Task Reminders',
+        channelDescription: 'Notifications for scheduled tasks',
+        importance: Importance.high,
+        priority: Priority.high,
+        playSound: true,
+        enableVibration: true,
+        fullScreenIntent: true,
+        actions: actionButtons,
+      );
+      const iosDetails = DarwinNotificationDetails();
+      final details = NotificationDetails(
+        android: androidDetails,
+        iOS: iosDetails,
+      );
+
+      final tzScheduled = tz.TZDateTime.from(scheduledDateTime, tz.local);
+
+      debugPrint('''
+━━━ [NotificationService] schedule() — repeat #$i ━━━
 task.id:          ${task.id}
 task.title:       ${task.title}
-scheduledDateTime local: $scheduledDateTime
-scheduledDateTime ms:    ${scheduledDateTime.millisecondsSinceEpoch}
-tz.local:         ${tz.local.name}
-tzScheduled:      $tzScheduled
-tzScheduled ms:   ${tzScheduled.millisecondsSinceEpoch}
-now local:        ${DateTime.now()}
-now ms:           ${DateTime.now().millisecondsSinceEpoch}
-diff (s):         ${tzScheduled.difference(tz.TZDateTime.now(tz.local)).inSeconds}s
 notificationId:   $notificationId
-channel:          task_channel
+scheduledDateTime local: $scheduledDateTime
+tzScheduled:      $tzScheduled
+diff (s):         ${tzScheduled.difference(tz.TZDateTime.now(tz.local)).inSeconds}s
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
 
-    try {
-      await _plugin!.zonedSchedule(
-        notificationId,
-        task.title,
-        task.description ?? 'Você tem uma tarefa para fazer',
-        tzScheduled,
-        details,
-        androidScheduleMode: AndroidScheduleMode.exact,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        payload: task.id.toString(),
-      );
-    } catch (e, stack) {
-      debugPrint('''
-━━━ [NotificationService] zonedSchedule EXCEPTION ━━━
+      try {
+        await _plugin!.zonedSchedule(
+          notificationId,
+          task.title,
+          body,
+          tzScheduled,
+          details,
+          androidScheduleMode: AndroidScheduleMode.exact,
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          payload: task.id.toString(),
+        );
+      } catch (e, stack) {
+        debugPrint('''
+━━━ [NotificationService] zonedSchedule EXCEPTION (repeat #$i) ━━━
 task.id:       ${task.id}
-task.title:    ${task.title}
+notificationId: $notificationId
 Exception:     $e
 Stack trace:  $stack
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
-      rethrow;
+        rethrow;
+      }
     }
 
-    // ─── Verifica se a notificação foi registrada ────────────
+    // Armazena o primeiro ID da série como referência
+    task.notificationId = ids.isNotEmpty ? ids.first : null;
+
+    // Verifica se as notificações foram registradas
     final pending = await _plugin!.pendingNotificationRequests();
     debugPrint('''
 ━━━ [NotificationService] pendingNotificationRequests ━━━
@@ -199,6 +263,17 @@ ${pending.map((r) => '  id=${r.id} title="${r.title}" body="${r.body}"').join('\
     await _plugin!.cancel(notificationId);
   }
 
+  /// Cancela TODAS as notificações da série de [task], não só a primeira.
+  ///
+  /// Usa [notificationIdsForTask] para recalcular deterministicamente
+  /// todos os IDs que podem ter sido agendados para esta tarefa.
+  Future<void> cancelSeries(TaskItem task) async {
+    final ids = notificationIdsForTask(task);
+    for (final id in ids) {
+      await cancel(id);
+    }
+  }
+
   /// Agenda uma notificação de teste [seconds] no futuro para diagnosticar
   /// se o mecanismo de `zonedSchedule` está funcionando no dispositivo.
   ///
@@ -239,8 +314,6 @@ debugId:          $debugId
 mode:             ${AndroidScheduleMode.exact}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━''');
 
-    // Usamos alarmClock (AlarmManager.setAlarmClock) para testar se o
-    // problema é específico do setExact() ou mais geral.
     await _plugin!.zonedSchedule(
       debugId,
       '🔔 Teste de agendamento',
