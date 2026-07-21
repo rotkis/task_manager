@@ -56,6 +56,31 @@ class PermissionHelper {
     await _channel.invokeMethod('requestIgnoreBatteryOptimization');
   }
 
+  // ─── Instalação de APK (fontes desconhecidas) ───────────────────────
+
+  /// Verifica se o app tem permissão para instalar pacotes de fontes
+  /// desconhecidas (Android 8+).
+  static Future<bool> checkInstallPackagesPermission() async {
+    final result =
+        await _channel.invokeMethod<bool>('checkInstallPackagesPermission');
+    return result ?? false;
+  }
+
+  /// Abre as configurações do sistema para o usuário permitir instalação
+  /// de fontes desconhecidas.
+  static Future<bool> openInstallPackagesSettings() async {
+    final result =
+        await _channel.invokeMethod<bool>('openInstallPackagesSettings');
+    return result ?? false;
+  }
+
+  /// Dispara o Intent de instalação do APK via FileProvider.
+  ///
+  /// [apkPath] é o caminho absoluto do arquivo .apk no cache do app.
+  static Future<void> installApk(String apkPath) async {
+    await _channel.invokeMethod('installApk', {'apkPath': apkPath});
+  }
+
   // ─── Timezone ──────────────────────────────────────────────────────
 
   /// Retorna o fuso horário do dispositivo (ex: "America/Sao_Paulo").

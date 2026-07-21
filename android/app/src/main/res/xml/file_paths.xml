@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  FileProvider paths — necessário para instalar APK baixado via
+  Intent.ACTION_VIEW com URI content://.
+  Aponta para o cache do app, onde o UpdateChecker salva o APK.
+-->
+<paths>
+    <cache-path name="cache" path="." />
+</paths>

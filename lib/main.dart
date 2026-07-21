@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -18,6 +19,8 @@ import 'features/notifications/alarm_service.dart';
 import 'features/notifications/notification_service.dart';
 import 'features/notifications/weekly_summary_service.dart';
 import 'features/notifications/widgets/notification_settings_sheet.dart';
+import 'features/updates/update_checker.dart';
+import 'features/updates/widgets/update_dialog.dart';
 import 'features/calendar/screens/calendar_screen.dart';
 import 'features/stats/screens/stats_screen.dart';
 import 'features/tasks/controllers/task_controller.dart';
@@ -79,6 +82,45 @@ class TaskManagerApp extends StatefulWidget {
 
 class _TaskManagerAppState extends State<TaskManagerApp> {
   ThemeMode _themeMode = ThemeMode.system;
+  final UpdateChecker _updateChecker = UpdateChecker();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdatesAfterFirstFrame();
+  }
+
+  @override
+  void dispose() {
+    _updateChecker.dispose();
+    super.dispose();
+  }
+
+  /// Verifica atualizações após o primeiro frame, sem travar a UI.
+  void _checkForUpdatesAfterFirstFrame() {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final needsCheck = await _updateChecker.needsCheck();
+        if (!needsCheck) return;
+
+        final packageInfo = await PackageInfo.fromPlatform();
+        final currentVersion = packageInfo.version;
+
+        final release = await _updateChecker.checkForUpdate(currentVersion);
+        await _updateChecker.markChecked();
+
+        if (release != null && mounted) {
+          UpdateDialog.show(
+            context,
+            release: release,
+            checker: _updateChecker,
+          );
+        }
+      } catch (_) {
+        // Falha silenciosa — nunca travar o app
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
